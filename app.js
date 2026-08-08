@@ -5,7 +5,7 @@
    species.json / traits.json から読み込む。
    ========================================================= */
 
-const CACHE_VERSION = "24"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
+const CACHE_VERSION = "25"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
 
 const CONFIG = {
   questionFiles: ["questions.json"],
@@ -136,6 +136,7 @@ function saveState() {
 function renderSpeciesSelect() {
   document.getElementById("selectScreen").style.display = "";
   document.getElementById("gameScreen").style.display = "none";
+  applyBackgroundTheme(0);
 
   const grid = document.getElementById("speciesGrid");
   grid.innerHTML = "";
@@ -320,6 +321,8 @@ function renderStage() {
   document.getElementById("stageName").textContent = stage.name;
   document.getElementById("stageDesc").textContent = stage.desc;
 
+  applyBackgroundTheme(overallCompletionFraction());
+
   const loveEl = document.getElementById("loveTotal");
   if (state.showPower || state.answeredCount <= 5) {
     loveEl.textContent = state.total;
@@ -343,6 +346,41 @@ function renderStage() {
 /* 見た目（色・パーツ）の進み具合は「愛パワーの合計」と「進化ステージ」に連動させる。
    ステージが上がるたびに大きく変化し、次のステージまでの間も、答えるたびに
    合計が少しずつ増える分だけ、色相などがなめらかに動いていく。 */
+/* =========================================================
+   169問（全テーマ）を通した完走度に応じて、ページ全体の背景と
+   文字色を少しずつ変化させ、最後には「空の色」になるようにする。
+   ========================================================= */
+const BG_THEME_START = { bg0: "#140b1f", bg1: "#1f1330", bg2: "#2a1a3d", ink: "#f3ece2", inkDim: "#cfc3d9", surface: { r: 255, g: 255, b: 255 } };
+const BG_THEME_END   = { bg0: "#ffe9c7", bg1: "#bfe3ff", bg2: "#eaf6ff", ink: "#2b2338", inkDim: "#5b6b7a", surface: { r: 43, g: 35, b: 56 } };
+
+function overallCompletionFraction() {
+  const total = QUESTIONS.length || 1;
+  return Math.max(0, Math.min(1, state.answeredCount / total));
+}
+
+function lerpHexColor(hexA, hexB, t) {
+  const a = hexToRgb(hexA), b = hexToRgb(hexB);
+  const r = Math.round(a.r + (b.r - a.r) * t);
+  const g = Math.round(a.g + (b.g - a.g) * t);
+  const bl = Math.round(a.b + (b.b - a.b) * t);
+  return `rgb(${r}, ${g}, ${bl})`;
+}
+
+function applyBackgroundTheme(fraction) {
+  const root = document.documentElement.style;
+  root.setProperty("--bg-0", lerpHexColor(BG_THEME_START.bg0, BG_THEME_END.bg0, fraction));
+  root.setProperty("--bg-1", lerpHexColor(BG_THEME_START.bg1, BG_THEME_END.bg1, fraction));
+  root.setProperty("--bg-2", lerpHexColor(BG_THEME_START.bg2, BG_THEME_END.bg2, fraction));
+  root.setProperty("--ink", lerpHexColor(BG_THEME_START.ink, BG_THEME_END.ink, fraction));
+  root.setProperty("--ink-dim", lerpHexColor(BG_THEME_START.inkDim, BG_THEME_END.inkDim, fraction));
+
+  const sA = BG_THEME_START.surface, sB = BG_THEME_END.surface;
+  const r = Math.round(sA.r + (sB.r - sA.r) * fraction);
+  const g = Math.round(sA.g + (sB.g - sA.g) * fraction);
+  const b = Math.round(sA.b + (sB.b - sA.b) * fraction);
+  root.setProperty("--surface-rgb", `${r}, ${g}, ${b}`);
+}
+
 function stageVisualProgress() {
   const stage = currentStage();
   const idx = EVOLUTION.indexOf(stage);

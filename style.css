@@ -6,7 +6,8 @@
   --ink-dim: #cfc3d9;
   --glow-1: #ff9d81;
   --glow-2: #ffd97a;
-  --line: rgba(243, 236, 226, 0.14);
+  --surface-rgb: 255, 255, 255; /* カード等の下地の色みを決めるRGB。進行度に応じてJSが書き換える */
+  --line: rgba(var(--surface-rgb), 0.14);
   --serif: "Hiragino Mincho ProN", "YuMincho", "游明朝", serif;
   --sans: "Hiragino Kaku Gothic ProN", "Yu Gothic", "游ゴシック", sans-serif;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -20,6 +21,7 @@ html, body {
   background: radial-gradient(120% 90% at 50% -10%, var(--bg-2), var(--bg-0) 60%);
   color: var(--ink);
   font-family: var(--sans);
+  transition: background 1.2s ease, color 1.2s ease;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
 }
@@ -145,7 +147,7 @@ body {
 
 /* ---------- question card ---------- */
 .card {
-  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  background: linear-gradient(180deg, rgba(var(--surface-rgb),0.05), rgba(var(--surface-rgb),0.02));
   border: 1px solid var(--line);
   border-radius: 18px;
   padding: 22px 18px;
@@ -177,7 +179,7 @@ body {
   padding: 14px 16px;
   border-radius: 12px;
   border: 1px solid var(--line);
-  background: rgba(255,255,255,0.03);
+  background: rgba(var(--surface-rgb),0.03);
   color: var(--ink);
   font-family: var(--sans);
   font-size: 14.5px;
@@ -307,7 +309,7 @@ footer.foot a { color: inherit; }
 }
 
 .species-card {
-  background: rgba(255,255,255,0.03);
+  background: rgba(var(--surface-rgb),0.03);
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 10px 6px 12px;
@@ -337,7 +339,7 @@ footer.foot a { color: inherit; }
 
 /* ---------- 地球人ぽい指標パネル ---------- */
 .ego-details {
-  background: rgba(255,255,255,0.03);
+  background: rgba(var(--surface-rgb),0.03);
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 10px 14px;
@@ -359,10 +361,10 @@ footer.foot a { color: inherit; }
 .ego-bar {
   flex: 1;
   height: 7px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(var(--surface-rgb),0.08);
   border-radius: 4px;
   overflow: hidden;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+  box-shadow: inset 0 0 0 1px rgba(var(--surface-rgb),0.05);
 }
 .ego-bar span {
   display: block;
@@ -534,7 +536,7 @@ footer.foot a { color: inherit; }
   padding: 7px 14px;
   border-radius: 20px;
   border: 1px solid var(--line);
-  background: rgba(255,255,255,0.04);
+  background: rgba(var(--surface-rgb),0.04);
   color: var(--ink-dim);
   font-family: var(--sans);
   font-size: 11.5px;
