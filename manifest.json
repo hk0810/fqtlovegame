@@ -1,7 +1,7 @@
 {
   "name": "FQT LOVE GARDEN",
   "short_name": "LOVE GARDEN",
-  "description": "愛を育てるもの — FQT LOVE GARDEN",
+  "description": "愛を育てる場所 — FQT LOVE GARDEN",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#140b1f",

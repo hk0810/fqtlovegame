@@ -5,7 +5,7 @@
    species.json / traits.json から読み込む。
    ========================================================= */
 
-const CACHE_VERSION = "52"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
+const CACHE_VERSION = "61"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
 
 const CONFIG = {
   questionFiles: ["questions.json"],
@@ -54,7 +54,6 @@ let SPECIES = [];
 let TRAITS = null;
 let TRAIT_TO_CATEGORIES = {}; // categoryEgoMapの逆引き（trait key -> category配列）
 let MENTOR_NAMES = null;
-let MAX_LOVE = 100; // questions.json から算出する理論上の最大値
 let LEVEL_COUNTS = {}; // level番号 -> その水準の設問数
 let LEVEL_TOTAL = 13;   // レベルの総数（進捗表示は問題数ではなくこの単位で見せる）
 
@@ -94,8 +93,6 @@ async function init() {
     });
     QUESTIONS = picked.sort((a, b) => a.id - b.id);
 
-    MAX_LOVE = QUESTIONS.reduce((sum, q) => sum + Math.max(...q.choices.map(c => (c.attributes && c.attributes.love) || 0)), 0) || 100;
-
     LEVEL_COUNTS = {};
     QUESTIONS.forEach(q => { LEVEL_COUNTS[q.level] = (LEVEL_COUNTS[q.level] || 0) + 1; });
     LEVEL_TOTAL = Object.keys(LEVEL_COUNTS).length || 13;
@@ -129,12 +126,12 @@ async function init() {
 
 const TUTORIAL_TEXTS = [
   "FQT LOVE GARDENへ\nようこそ！🩷",
-  "これは戦うゲームではありません。日常のさまざまな場面で「あなたならどうしますか？」と問いかけられる、愛を育てるゲームです。",
+  "これは戦うゲームではありません。日常のさまざまな場面で「あなたならどうしますか？」と問いかけられる、\n愛を育てるゲームです。",
   "5つの選択肢に、正解・不正解はありません。助けることも、距離を置くことも、自分を優先することも、すべて愛のかたちのひとつです。",
   "あなたが選んだ宇宙どうぶつは、愛のパワーが育つにつれて、姿も色も少しずつ変化していきます。やがて、伝説の宇宙どうぶつへと近づいていきます。",
-  "旅の途中で、あなたより大きな愛を持つメンターに出会うことがあります。愛には天井がありません。上には、また上がいます。",
+  "旅の途中で、あなたより大きな愛を持つメンターに出会うことがあります。愛には天井がありません。\n上には、また上がいます。",
   "「戻る」で選び直し、「保存して一旦やめる」でいつでも中断、「最初からやり直す」で最初から。読み上げやBGM・効果音も、お好みでオンオフできます。",
-  "この続きは、あなたのブラウザだけに保存されます。ホーム画面に追加しておくと、同じブラウザ・同じ端末で安心して続きを楽しめます。"
+  "この続きは、あなたのブラウザだけに保存されます。ホーム画面に追加しておくと、同じブラウザ・同じ端末で\n安心して続きを楽しめます。"
 ];
 
 function maybeShowTutorial(onDone) {
@@ -519,14 +516,21 @@ function renderNextQuestion() {
   });
 
   typewriterInto(questionCard, questionTextEl, q.question, () => {
-    choiceEls.forEach(({ btn, textEl, choice }) => {
-      btn.style.visibility = "";
-      typewriterInto(questionCard, textEl, choice.text);
-    });
+    revealChoicesInOrder(choiceEls, 0);
   });
 
   const backBtn = document.getElementById("backBtn");
   backBtn.style.display = state.history.length > 0 ? "" : "none";
+}
+
+/* 選択肢をA→B→C→D→Eの順に、1つずつタイプライターで表示していく */
+function revealChoicesInOrder(choiceEls, index) {
+  if (index >= choiceEls.length) return;
+  const { btn, textEl, choice } = choiceEls[index];
+  btn.style.visibility = "";
+  typewriterInto(document.getElementById("questionCard"), textEl, choice.text, () => {
+    revealChoicesInOrder(choiceEls, index + 1);
+  });
 }
 
 function updateProgress() {

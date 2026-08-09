@@ -3,7 +3,7 @@
     "id": 1,
     "key": "moon_mochi",
     "name": "ムーンモチ",
-    "personality": "のんびり屋・癒しマスター",
+    "personality": "のんびり屋\n癒しマスター",
     "favorite": "お昼寝",
     "quote": "まんまるお月さまの下で、ねむたいな…",
     "parts": {
@@ -28,7 +28,7 @@
     "id": 2,
     "key": "san_san_poko",
     "name": "サンサンぽこ",
-    "personality": "よく笑う・太陽氣質",
+    "personality": "よく笑う\n太陽氣質",
     "favorite": "朝日",
     "quote": "今日もいい天氣！元氣にいこう☀️",
     "parts": {
@@ -53,7 +53,7 @@
     "id": 3,
     "key": "yume_purin",
     "name": "ゆめプリン",
-    "personality": "夢見がち・理想を描く夢想家",
+    "personality": "夢見がち\n理想を描く夢想家",
     "favorite": "キラキラしたもの",
     "quote": "今夜はどんな夢を見ようかな",
     "parts": {
@@ -78,7 +78,7 @@
     "id": 4,
     "key": "honey_puni",
     "name": "ハニプニ",
-    "personality": "甘えん坊・愛情豊か",
+    "personality": "甘えん坊\n愛情豊か",
     "favorite": "はちみつ",
     "quote": "ぎゅーってしてほしいな",
     "parts": {
@@ -103,7 +103,7 @@
     "id": 5,
     "key": "sakura_mochi",
     "name": "さくらもち",
-    "personality": "おっとり・優しい心",
+    "personality": "おっとり\n優しい心",
     "favorite": "花",
     "quote": "春の風がきもちいいね",
     "parts": {
@@ -128,7 +128,7 @@
     "id": 6,
     "key": "puni_koro",
     "name": "ぷにコロ",
-    "personality": "マイペース・自然体",
+    "personality": "マイペース\n自然体",
     "favorite": "昼寝",
     "quote": "ころころ〜っと転がってきたよ",
     "parts": {
@@ -153,7 +153,7 @@
     "id": 7,
     "key": "kira_kiran",
     "name": "きらきらん",
-    "personality": "ムードメーカー・周囲を照らす存在",
+    "personality": "ムードメーカー\n周囲を照らす存在",
     "favorite": "星",
     "quote": "みんなで見ると星はもっときれいだよ",
     "parts": {
@@ -178,7 +178,7 @@
     "id": 8,
     "key": "mintoru",
     "name": "みんとる",
-    "personality": "几帳面・誠実派",
+    "personality": "几帳面\n誠実派",
     "favorite": "ハーブティー",
     "quote": "すっきり爽やかな氣分だよ",
     "parts": {
@@ -203,7 +203,7 @@
     "id": 9,
     "key": "pofu_pofu",
     "name": "ぽふぽふ",
-    "personality": "甘党・安らぎを届ける癒し系",
+    "personality": "甘党\n安らぎを届ける癒し系",
     "favorite": "マシュマロ",
     "quote": "ぽふぽふのほっぺ、さわってみて",
     "parts": {
@@ -228,7 +228,7 @@
     "id": 10,
     "key": "paku_pakun",
     "name": "パクパクン",
-    "personality": "食いしん坊・ワクワクを届ける発信源",
+    "personality": "食いしん坊\nワクワクを届ける発信源",
     "favorite": "クッキー",
     "quote": "今日のおやつは何かな〜？",
     "parts": {
@@ -253,7 +253,7 @@
     "id": 11,
     "key": "cosmo_prince",
     "name": "コスモドリーマー",
-    "personality": "ロマンチスト・未来を信じる夢追い星",
+    "personality": "ロマンチスト\n未来を信じる夢追い星",
     "favorite": "流れ星",
     "quote": "君に会えて、宇宙中が輝いて見えるよ",
     "parts": {
@@ -278,7 +278,7 @@
     "id": 12,
     "key": "galaxy_queen",
     "name": "コスモアーティスト",
-    "personality": "芸術家肌・感性豊か",
+    "personality": "芸術家肌\n感性豊か",
     "favorite": "銀河の景色",
     "quote": "この宇宙は、わたしが描いた一枚の絵なの",
     "parts": {
@@ -303,7 +303,7 @@
     "id": 13,
     "key": "legend_star",
     "name": "レジェンドスター",
-    "personality": "博愛・包容力のあるリーダー",
+    "personality": "博愛\n包容力のあるリーダー",
     "favorite": "伝説の物語",
     "quote": "いつか私も、誰かの伝説になりたいな",
     "parts": {
