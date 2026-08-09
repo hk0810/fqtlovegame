@@ -5,7 +5,7 @@
    species.json / traits.json から読み込む。
    ========================================================= */
 
-const CACHE_VERSION = "72"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
+const CACHE_VERSION = "78"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
 
 const CONFIG = {
   questionFiles: ["questions.json"],
@@ -268,10 +268,10 @@ function maybeShowIntroThenFirstMentor(onDone) {
 }
 
 const INTRO_TEXTS = [
-  "あなたはまだ宇宙に生まれて間もなく、挫折も苦難も味わったことがありません。ものごころをついた頃には自分では気づかないほどのほんの少しの傲慢さや驕りも生まれてきました。",
+  "あなたはまだ宇宙に生まれて間もなく\n挫折も苦難も味わったことがありません。ものごころをついた頃には自分では気づかないほどのほんの少しの\n傲慢さや驕りも生まれてきました。",
   "狭い世界の中で、「自分は愛のパワーが強い」と自惚れることもあったでしょう",
   "そんなあなたが、ある日、ひとつの出会いを経験します。それは、",
-  "あなたの世界を大きく変えていく大切な出会いでした。"
+  "あなたの世界を大きく変えていく\n大切な出会いでした。"
 ];
 
 function showIntroSequence(onComplete, texts) {
@@ -644,7 +644,7 @@ function proceedAfterMentor() {
 function showThemeCompletePopup(onContinue, onStop) {
   const overlay = document.getElementById("feedbackOverlay");
   const card = document.getElementById("feedbackCard");
-  const message = "今回のテーマ13問は終わりました。\n明日続きをすることもできます。\n続けますか？";
+  const message = "今回のテーマ13問は終わりました。 \n明日、続きをすることもできます。 \n続けますか？";
   card.innerHTML = `
     <p class="eyebrow" style="text-align:center">テーマ完了</p>
     <p class="feedback-comment" id="themeCompleteText" style="text-align:center"></p>
@@ -842,27 +842,76 @@ function showEvolutionSharePopup(stage, onProceed) {
     </div>
   `;
   overlay.classList.add("show");
+  overlay.classList.add("align-bottom");
 
   function goNext() {
     overlay.classList.remove("show");
+    overlay.classList.remove("align-bottom");
     onProceed(); // ここでrenderNextQuestion()に進み、設問までスクロールされる
   }
 
   document.getElementById("shareEvolutionBtn").addEventListener("click", async () => {
     const sp = getSpecies();
-    const shareText = `FQT LOVE GARDENで「${stage.name}」まで愛を育てました🌱\n共に歩む宇宙どうぶつ：${sp.name}`;
+    const shareText = buildEvolutionShareText(stage, sp);
     try {
-      if (navigator.share) {
-        await navigator.share({ text: shareText, url: location.href });
+      const imageFile = await creatureSvgToPngFile(sp);
+      if (imageFile && navigator.canShare && navigator.canShare({ files: [imageFile] })) {
+        await navigator.share({ text: shareText, files: [imageFile] });
+      } else if (navigator.share) {
+        await navigator.share({ text: shareText });
       } else if (navigator.clipboard) {
-        await navigator.clipboard.writeText(`${shareText}\n${location.href}`);
-        alert("シェア文をコピーしました。");
+        await navigator.clipboard.writeText(shareText);
+        alert("シェア文をコピーしました。（この端末では画像の共有には対応していません）");
       }
     } catch (e) { /* シェアをキャンセルした場合などは何もしない */ }
     goNext();
   }, { once: true });
 
   document.getElementById("shareLaterBtn").addEventListener("click", goNext, { once: true });
+}
+
+/* シェア文言を組み立てる */
+function buildEvolutionShareText(stage, sp) {
+  return `FQT LOVE GARDENで「${stage.name}」まで愛を育てました🌱\n` +
+    `共に歩む宇宙どうぶつ：${sp.name}✨\n\n` +
+    `あなたの愛は、どんな光になる？🌌\n\n` +
+    `愛が育つ場所\n` +
+    `fqtlovegarden.pages.dev\n\n` +
+    `#FQTLOVEGARDEN #FQT #LOVEGARDEN #愛を育てる #愛のパワー #愛 #宇宙どうぶつ ` +
+    `#${stage.name} #${sp.name} #自分を愛する #思いやり #感謝 #調和 #宇宙 #魂 #愛の旅 #毎日を大切に #無料アプリ`;
+}
+
+/* 今表示されている宇宙どうぶつのSVGを、シェア用のPNG画像ファイルに変換する */
+function creatureSvgToPngFile(sp) {
+  return new Promise((resolve, reject) => {
+    const svgEl = document.querySelector("#creatureMount svg");
+    if (!svgEl) { resolve(null); return; }
+
+    const size = 600; // 書き出す画像サイズ（正方形）
+    const svgString = new XMLSerializer().serializeToString(svgEl);
+    const svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(svgBlob);
+
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      // 背景（透明にせず、宇宙どうぶつの背景色っぽい濃い色で塗っておく）
+      ctx.fillStyle = "#1a1224";
+      ctx.fillRect(0, 0, size, size);
+      ctx.drawImage(img, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(blob => {
+        if (!blob) { resolve(null); return; }
+        const fileName = `${(sp && sp.name) || "creature"}.png`;
+        resolve(new File([blob], fileName, { type: "image/png" }));
+      }, "image/png");
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+    img.src = url;
+  });
 }
 
 /* BGMや効果音の再生は、効果音トグルがONの場合だけ行う（music.js側の豪華なファンファーレを使う） */
