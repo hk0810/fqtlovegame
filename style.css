@@ -24,6 +24,15 @@ html, body {
   transition: background 1.2s ease, color 1.2s ease;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
+  /* 日本語の禁則処理: 句読点が行頭に来ない・単語の途中で改行されない */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  line-break: strict;
+}
+
+/* 特定の語句を絶対に改行させたくない場合はこのクラスを使う */
+.nowrap-word {
+  white-space: nowrap;
 }
 
 body {
@@ -730,6 +739,67 @@ footer.foot a { color: inherit; }
 }
 .promo-arrow {
   font-size: 22px;
+  font-weight: 900;
+  color: var(--glow-2);
+  flex-shrink: 0;
+}
+
+/* ===== シリーズ紹介カード（FQT LIFE COUNTER）— 通常のプロモカードとは別格の特別扱い ===== */
+.series-card {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  margin: 4px 0 14px;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  border-radius: 18px;
+  padding: 20px 18px 16px;
+  border: 1.5px solid rgba(255, 217, 122, 0.55);
+  background: linear-gradient(135deg, rgba(255, 217, 122, 0.14), rgba(255, 157, 129, 0.08));
+  box-shadow: 0 0 0 1px rgba(255, 217, 122, 0.08), 0 10px 30px rgba(184, 134, 11, 0.22);
+  animation: series-glow 2.6s ease-in-out infinite;
+}
+.series-card:active { transform: scale(0.98); }
+@keyframes series-glow {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(255, 217, 122, 0.08), 0 10px 30px rgba(184, 134, 11, 0.22); }
+  50%      { box-shadow: 0 0 0 1px rgba(255, 217, 122, 0.18), 0 10px 38px rgba(184, 134, 11, 0.4); }
+}
+.series-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #241533;
+  background: linear-gradient(90deg, var(--glow-1), var(--glow-2));
+  border-radius: 999px;
+  padding: 3px 10px;
+  margin-bottom: 10px;
+}
+.series-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.series-emoji {
+  font-size: 30px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.series-text { flex: 1; min-width: 0; }
+.series-main {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.series-sub {
+  font-size: 11px;
+  color: var(--ink-dim);
+  margin-top: 2px;
+}
+.series-arrow {
+  font-size: 24px;
   font-weight: 900;
   color: var(--glow-2);
   flex-shrink: 0;

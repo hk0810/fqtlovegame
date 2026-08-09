@@ -5,7 +5,7 @@
    species.json / traits.json から読み込む。
    ========================================================= */
 
-const CACHE_VERSION = "40"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
+const CACHE_VERSION = "48"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
 
 const CONFIG = {
   questionFiles: ["questions.json"],
@@ -271,7 +271,7 @@ function maybeShowIntroThenFirstMentor(onDone) {
 }
 
 const INTRO_TEXTS = [
-  "まだ宇宙に生まれて間もなく、挫折も苦難も味わったことのないあなたには、自分では気づかないほどの傲慢さや驕りがありました。",
+  "あなたはまだ宇宙に生まれて間もなく、挫折も苦難も味わったことがありません。ものごころをついた頃には自分では気づかないほどのほんの少しの傲慢さや驕りも生まれてきました。",
   "狭い世界の中で、「自分は愛のパワーが強い」と思うこともあったでしょう。",
   "そんなあなたが、ある日、ひとつの出会いを経験します。それは、",
   "あなたの世界を大きく変えていく大切な出会いでした。"
@@ -497,21 +497,32 @@ function renderNextQuestion() {
   if (!q) { renderEnd(); return; }
   CURRENT_QUESTION = q;
 
-  document.getElementById("questionCard").style.display = "";
+  const questionCard = document.getElementById("questionCard");
+  questionCard.style.display = "";
   document.getElementById("questionCategory").textContent = `テーマ${q.level} ・ ${q.category}`;
-  document.getElementById("questionText").textContent = q.question;
   document.getElementById("replayBtn").style.display = "";
 
   if (state.readAloud) speakQuestion(q);
 
+  const questionTextEl = document.getElementById("questionText");
   const wrap = document.getElementById("choices");
   wrap.innerHTML = "";
-  q.choices.forEach(c => {
+
+  const choiceEls = q.choices.map(c => {
     const btn = document.createElement("button");
     btn.className = "choice-btn";
-    btn.innerHTML = `<span class="letter">${c.id}</span>${escapeHtml(c.text)}`;
+    btn.style.visibility = "hidden";
+    btn.innerHTML = `<span class="letter">${c.id}</span><span class="choice-text"></span>`;
     btn.addEventListener("click", () => answer(q, c));
     wrap.appendChild(btn);
+    return { btn, textEl: btn.querySelector(".choice-text"), choice: c };
+  });
+
+  typewriterInto(questionCard, questionTextEl, q.question, () => {
+    choiceEls.forEach(({ btn, textEl, choice }) => {
+      btn.style.visibility = "";
+      typewriterInto(questionCard, textEl, choice.text);
+    });
   });
 
   const backBtn = document.getElementById("backBtn");
@@ -599,10 +610,70 @@ function proceedToMentorOrNext() {
     const lastEntry = state.history[state.history.length - 1];
     if (lastEntry) lastEntry.mentorId = mentor.id; // 戻る操作でこのメンター遭遇も取り消せるように記録
     saveState();
-    showMentor(mentor, () => renderNextQuestion());
+    showMentor(mentor, () => proceedAfterMentor());
+  } else {
+    proceedAfterMentor();
+  }
+}
+
+/* テーマ（13問）の境目を検知して、続けるかどうかを尋ねる */
+function proceedAfterMentor() {
+  const lastId = state.answeredIds[state.answeredIds.length - 1];
+  const lastQ = QUESTIONS.find(q => q.id === lastId);
+  const upcoming = nextUnanswered();
+
+  if (upcoming && lastQ && upcoming.level !== lastQ.level) {
+    showThemeCompletePopup(
+      () => renderNextQuestion(),          // はい：次のテーマへ
+      () => showThemePausedScreen()        // いいえ：保存して終了
+    );
   } else {
     renderNextQuestion();
   }
+}
+
+function showThemeCompletePopup(onContinue, onStop) {
+  const overlay = document.getElementById("feedbackOverlay");
+  const card = document.getElementById("feedbackCard");
+  const message = "今回のテーマ13問は終わりました。\n明日続きをすることもできます。\n続けますか？";
+  card.innerHTML = `
+    <p class="eyebrow" style="text-align:center">テーマ完了</p>
+    <p class="feedback-comment" id="themeCompleteText" style="text-align:center"></p>
+    <div style="display:flex;gap:10px;margin-top:6px">
+      <button class="feedback-btn" id="themeYesBtn" style="flex:1;visibility:hidden">はい　次のテーマをこなす</button>
+    </div>
+    <div style="margin-top:10px">
+      <button class="ghost-btn" id="themeNoBtn" style="width:100%;visibility:hidden">いいえ　保存して終了</button>
+    </div>
+  `;
+  const textEl = document.getElementById("themeCompleteText");
+  const yesBtn = document.getElementById("themeYesBtn");
+  const noBtn = document.getElementById("themeNoBtn");
+  typewriterInto(card, textEl, message, () => {
+    yesBtn.style.visibility = "";
+    noBtn.style.visibility = "";
+  });
+  overlay.classList.add("show");
+  yesBtn.addEventListener("click", () => {
+    overlay.classList.remove("show");
+    onContinue();
+  }, { once: true });
+  noBtn.addEventListener("click", () => {
+    saveState();
+    overlay.classList.remove("show");
+    onStop();
+  }, { once: true });
+}
+
+/* 「いいえ」を選んだ後の、落ち着いた終了画面 */
+function showThemePausedScreen() {
+  updateProgress();
+  document.getElementById("questionCategory").textContent = "";
+  document.getElementById("questionText").textContent =
+    "ここまでの記録は保存されています。また今度、続きをお待ちしています。";
+  document.getElementById("choices").innerHTML = "";
+  document.getElementById("replayBtn").style.display = "none";
+  document.getElementById("backBtn").style.display = "none";
 }
 
 function showBlindExplainPopup(onClose) {
@@ -648,6 +719,22 @@ function undoLast() {
 
 /* 固定のメンターを使い切った後は、青天井（終わりのない）メンターを毎回生成する。
    ドラゴンボールの「上には上がいる」の発想: 誰か一人を「最強」として固定しない。 */
+const INFINITE_MENTOR_MESSAGES = [
+  "この道に終わりはありません。あなたより大きな愛を持つ存在は、これからも現れ続けます。",
+  "また、あなたより大きな愛を持つ存在に出会いました。上には、まだ上があります。",
+  "どれだけ育っても、その先がある。それが愛というものです。",
+  "この光もまた、あなたが目指す一つの目印にすぎません。",
+  "大きな愛を持つ者ほど、静かに、そこにいるものです。",
+  "追いついたと思った瞬間、また新しい光が見えてきます。",
+  "愛の大きさに、ゴールはありません。ただ育ち続けるだけです。",
+  "この存在も、かつては小さな光でした。",
+  "あなたが育てば育つほど、出会う光もまた大きくなっていきます。",
+  "青天井とは、こういうことなのかもしれません。",
+  "まだ知らない大きな愛が、この先にもたくさんあります。",
+  "一つ超えても、また一つ。それでいいのです。",
+  "この道を歩き続けること自体が、愛を育てるということです。"
+];
+
 function nextMentorFor(answeredCount) {
   const mentorLove = mentorLoveFor(answeredCount);
 
@@ -667,10 +754,14 @@ function nextMentorFor(answeredCount) {
     hand: Math.floor(rng() * 15), foot: Math.floor(rng() * 15), pattern: Math.floor(rng() * 30),
     background: Math.floor(rng() * 20), color: Math.floor(rng() * 68), star: Math.floor(rng() * 15)
   };
+  // 青天井メンターは何体目かを数えて、13種類のメッセージを順番に巡回させる
+  const proceduralCount = state.seenMentors.filter(id => typeof id === "string" && id.startsWith("proc-")).length;
+  const message = INFINITE_MENTOR_MESSAGES[proceduralCount % INFINITE_MENTOR_MESSAGES.length];
+
   return {
     id: `proc-${answeredCount}`,
     name, love: mentorLove, parts,
-    message: "この道に終わりはありません。あなたより大きな愛を持つ存在は、これからも現れ続けます。"
+    message
   };
 }
 
@@ -902,8 +993,19 @@ function showMentor(mentor, onClose) {
     }, { once: true });
   }
 
+  // 他のポップアップ（チュートリアル・メンターとの出会いなど）が表示中は、
+  // それが閉じるまで待ってから表示する（重なって出るのを防ぐ）
+  function waitForNoOtherPopupThenShow() {
+    const feedbackOverlay = document.getElementById("feedbackOverlay");
+    if (feedbackOverlay && feedbackOverlay.classList.contains("show")) {
+      setTimeout(waitForNoOtherPopupThenShow, 1000);
+    } else {
+      showPwaPrompt();
+    }
+  }
+
   if (shouldShowPwaPrompt()) {
-    setTimeout(showPwaPrompt, SHOW_DELAY_MS);
+    setTimeout(waitForNoOtherPopupThenShow, SHOW_DELAY_MS);
   }
 })();
 
@@ -1068,17 +1170,21 @@ function setupMusicUI() {
 }
 
 /* ---------------- ユーティリティ ---------------- */
-/* ---------------- タイプライター演出（全ポップアップ共通） ----------------
+/* ---------------- タイプライター演出（全ポップアップ・設問共通） ----------------
    指定した要素に、1文字ずつ文章を表示していく。
-   ・カード（ボタン以外）をタップすると即座に全文表示される
+   ・カード内をタップすると、今アニメーション中のものすべてが即座に全文表示される
    ・全文表示され終えたタイミングで onDone を呼ぶ（＝ボタンを出す、など） */
 const TYPEWRITER_SPEED_MS = 26;
-let ACTIVE_POPUP_SKIP = () => {};
+let ACTIVE_SKIPS = [];
 
 function ensureCardSkipListener(cardEl) {
   if (!cardEl || cardEl.dataset.skipBound) return;
-  cardEl.addEventListener("click", (e) => {
-    if (e.target.tagName !== "BUTTON") ACTIVE_POPUP_SKIP();
+  cardEl.addEventListener("click", () => {
+    if (ACTIVE_SKIPS.length) {
+      const toSkip = ACTIVE_SKIPS.slice();
+      ACTIVE_SKIPS = [];
+      toSkip.forEach(fn => fn());
+    }
   });
   cardEl.dataset.skipBound = "1";
 }
@@ -1097,6 +1203,7 @@ function typewriterInto(cardEl, el, text, onDone) {
     done = true;
     if (timer) clearTimeout(timer);
     el.textContent = text;
+    ACTIVE_SKIPS = ACTIVE_SKIPS.filter(fn => fn !== finish);
     if (onDone) onDone();
   }
   function step() {
@@ -1108,7 +1215,7 @@ function typewriterInto(cardEl, el, text, onDone) {
       finish();
     }
   }
-  ACTIVE_POPUP_SKIP = finish;
+  ACTIVE_SKIPS.push(finish);
   step();
   return finish; // 呼び出し元が「スキップ」に使える
 }
