@@ -237,6 +237,7 @@ body {
   color: var(--ink-dim);
   margin: 10px 0 20px;
   line-height: 1.7;
+  white-space: pre-line;
 }
 
 .feedback-btn, .primary-btn {
@@ -669,3 +670,67 @@ footer.foot a { color: inherit; }
   cursor: pointer;
 }
 .ghost-btn:active { opacity: 0.7; }
+
+/* ===== 宣伝カード（FQT LIFE COUNTERと同じ構造。配色はこのアプリのダークテーマに合わせている） ===== */
+.promo-section {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.promo-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  text-decoration: none;
+  font-family: inherit;
+  color: inherit;
+  border: 1px solid rgba(255, 217, 122, 0.35);
+  border-radius: 16px;
+  padding: 18px 16px;
+  margin-bottom: 14px;
+  background: linear-gradient(135deg, rgba(255, 217, 122, 0.08), rgba(255, 157, 129, 0.05));
+  box-shadow: 0 8px 24px rgba(184, 134, 11, 0.14);
+  position: relative;
+  overflow: hidden;
+  animation: promo-glow 2.4s ease-in-out infinite;
+  cursor: pointer;
+}
+.promo-card:active { transform: scale(0.98); }
+@keyframes promo-glow {
+  0%, 100% { box-shadow: 0 8px 24px rgba(184, 134, 11, 0.14); }
+  50%      { box-shadow: 0 8px 28px rgba(184, 134, 11, 0.28); }
+}
+.promo-card .section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-dim);
+  margin: 0 0 10px;
+}
+.promo-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.promo-emoji {
+  font-size: 26px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.promo-text { flex: 1; min-width: 0; }
+.promo-sub {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--ink-dim);
+  margin-bottom: 2px;
+}
+.promo-main {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--glow-2);
+}
+.promo-arrow {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--glow-2);
+  flex-shrink: 0;
+}

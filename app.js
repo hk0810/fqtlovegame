@@ -5,7 +5,7 @@
    species.json / traits.json から読み込む。
    ========================================================= */
 
-const CACHE_VERSION = "38"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
+const CACHE_VERSION = "40"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
 
 const CONFIG = {
   questionFiles: ["questions.json"],
@@ -286,10 +286,13 @@ function showIntroSequence(onComplete, texts) {
   function renderStep() {
     const isLast = step === list.length - 1;
     card.innerHTML = `
-      <p class="intro-popup-text">${escapeHtml(list[step])}</p>
-      <button class="feedback-btn" id="introNext">${isLast ? "つづける" : "つぎへ"}</button>
+      <p class="intro-popup-text" id="introText"></p>
+      <button class="feedback-btn" id="introNext" style="visibility:hidden">${isLast ? "つづける" : "つぎへ"}</button>
     `;
-    document.getElementById("introNext").addEventListener("click", () => {
+    const textEl = document.getElementById("introText");
+    const nextBtn = document.getElementById("introNext");
+    typewriterInto(card, textEl, list[step], () => { nextBtn.style.visibility = ""; });
+    nextBtn.addEventListener("click", () => {
       step += 1;
       if (step < list.length) {
         renderStep();
@@ -310,21 +313,23 @@ function saveAndPause() {
   saveState();
   const overlay = document.getElementById("feedbackOverlay");
   const card = document.getElementById("feedbackCard");
+  const message = "ここまでの記録を保存しました。\n" +
+    "このままアプリを閉じても大丈夫です。\n" +
+    "次に開いたとき、続きから始まります。\n" +
+    "ただし、ブラウザや端末が変わると\n" +
+    "データは読み込めません。\n" +
+    "ホーム画面に追加していれば\n" +
+    "ブラウザが変わらず安心です。";
   card.innerHTML = `
     <p class="eyebrow" style="text-align:center">保存しました</p>
-    <p class="feedback-comment" style="text-align:center">
-      ここまでの記録を保存しました。<br>
-      このままアプリを閉じても大丈夫です。<br>
-      次に開いたとき、続きから始まります。<br>
-      ただし、ブラウザや端末が変わると<br>
-      データは読み込めません。<br>
-      ホーム画面に追加していれば<br>
-      ブラウザが変わらず安心です。
-    </p>
-    <button class="feedback-btn" id="feedbackNext">続ける</button>
+    <p class="feedback-comment" id="savePauseText" style="text-align:center;white-space:pre-line"></p>
+    <button class="feedback-btn" id="feedbackNext" style="visibility:hidden">続ける</button>
   `;
+  const textEl = document.getElementById("savePauseText");
+  const nextBtn = document.getElementById("feedbackNext");
+  typewriterInto(card, textEl, message, () => { nextBtn.style.visibility = ""; });
   overlay.classList.add("show");
-  document.getElementById("feedbackNext").addEventListener("click", () => {
+  nextBtn.addEventListener("click", () => {
     overlay.classList.remove("show");
   }, { once: true });
 }
@@ -603,18 +608,20 @@ function proceedToMentorOrNext() {
 function showBlindExplainPopup(onClose) {
   const overlay = document.getElementById("feedbackOverlay");
   const card = document.getElementById("feedbackCard");
+  const message = "6問目からは、愛のパワーの数値を伏せています。\n\n" +
+    "数字を気にせず、その場面での自分の気持ちに集中してもらうためです。\n" +
+    "進化の瞬間には、ちゃんとお知らせします。\n\n" +
+    "数値をずっと見ていたい場合は、「愛のパワー指標を表示する」のチェックでいつでも見られます。";
   card.innerHTML = `
     <p class="eyebrow" style="text-align:center">お知らせ</p>
-    <p class="feedback-comment">
-      6問目からは、愛のパワーの数値を伏せています。<br><br>
-      数字を気にせず、その場面での自分の気持ちに集中してもらうためです。<br>
-      進化の瞬間には、ちゃんとお知らせします。<br><br>
-      数値をずっと見ていたい場合は、「愛のパワー指標を表示する」のチェックでいつでも見られます。
-    </p>
-    <button class="feedback-btn" id="feedbackNext">分かった</button>
+    <p class="feedback-comment" id="blindExplainText" style="white-space:pre-line"></p>
+    <button class="feedback-btn" id="feedbackNext" style="visibility:hidden">分かった</button>
   `;
+  const textEl = document.getElementById("blindExplainText");
+  const nextBtn = document.getElementById("feedbackNext");
+  typewriterInto(card, textEl, message, () => { nextBtn.style.visibility = ""; });
   overlay.classList.add("show");
-  document.getElementById("feedbackNext").addEventListener("click", () => {
+  nextBtn.addEventListener("click", () => {
     overlay.classList.remove("show");
     onClose();
   }, { once: true });
@@ -675,11 +682,14 @@ function showFeedback({ delta, comment, evolved, stage }, onClose) {
 
   card.innerHTML = `
     ${showPoints ? `<p class="feedback-delta">愛のパワー ${delta >= 0 ? "+" : ""}${delta} ❤</p>` : ""}
-    <p class="feedback-comment">${escapeHtml(comment || "")}</p>
-    <button class="feedback-btn" id="feedbackNext">つづける</button>
+    <p class="feedback-comment" id="feedbackCommentText"></p>
+    <button class="feedback-btn" id="feedbackNext" style="visibility:hidden">つづける</button>
   `;
+  const textEl = document.getElementById("feedbackCommentText");
+  const nextBtn = document.getElementById("feedbackNext");
+  typewriterInto(card, textEl, comment || "", () => { nextBtn.style.visibility = ""; });
   overlay.classList.add("show");
-  document.getElementById("feedbackNext").addEventListener("click", () => {
+  nextBtn.addEventListener("click", () => {
     overlay.classList.remove("show");
     if (evolved) {
       showEvolutionPopup(stage, onClose);
@@ -699,12 +709,15 @@ function showEvolutionPopup(stage, onClose) {
       <p class="evolution-star">✧･ﾟ: *✧･ﾟ:*</p>
       <p class="evolution-headline">進化しました</p>
       <p class="evolution-stage-name">${escapeHtml(stage.name)}</p>
-      <p class="evolution-threshold">愛のパワーが ${stage.min} を超えました！</p>
+      <p class="evolution-threshold" id="evolutionThresholdText"></p>
       <p class="evolution-total-big">愛のパワー合計 <b>${state.total}</b></p>
       <p class="evolution-star">✧･ﾟ: *✧･ﾟ:*</p>
-      <button class="feedback-btn" id="feedbackNext">つづける</button>
+      <button class="feedback-btn" id="feedbackNext" style="visibility:hidden">つづける</button>
     </div>
   `;
+  const textEl = document.getElementById("evolutionThresholdText");
+  const nextBtn = document.getElementById("feedbackNext");
+  typewriterInto(card, textEl, `愛のパワーが ${stage.min} を超えました！`, () => { nextBtn.style.visibility = ""; });
   overlay.classList.add("show");
   playFanfareIfAllowed();
   document.getElementById("feedbackNext").addEventListener("click", () => {
@@ -734,7 +747,7 @@ function showMentor(mentor, onClose) {
     ? generateCreatureSVG({ targetParts: mentor.parts, progress: 1, idPrefix: `mentor-${mentor.id}` })
     : "";
   card.innerHTML = `
-    ${mentor.intro ? `<p class="mentor-intro">${escapeHtml(mentor.intro)}</p>` : ""}
+    ${mentor.intro ? `<p class="mentor-intro" id="mentorIntroText"></p>` : ""}
     <p class="eyebrow" style="text-align:center">あなたより大きな愛を持つメンターに出会いました</p>
     <p class="mentor-name">${escapeHtml(mentor.name)}</p>
     ${portraitSvg ? `<div class="mentor-portrait">${portraitSvg}</div>` : ""}
@@ -742,10 +755,28 @@ function showMentor(mentor, onClose) {
       <span>あなたの愛<b>${state.total}</b></span>
       <span>${escapeHtml(mentor.name)}の愛<b>${mentor.love}</b></span>
     </div>
-    <p class="feedback-comment">${escapeHtml(mentor.message)}</p>
-    <p class="mentor-asks">その${escapeHtml(mentor.name)}から、そっと問いかけられます。</p>
-    <button class="feedback-btn" id="feedbackNext">問いに答える</button>
+    <p class="feedback-comment" id="mentorMessageText"></p>
+    <p class="mentor-asks" id="mentorAsksText" style="visibility:hidden">その${escapeHtml(mentor.name)}から、そっと問いかけられます。</p>
+    <button class="feedback-btn" id="feedbackNext" style="visibility:hidden">問いに答える</button>
   `;
+  const nextBtn = document.getElementById("feedbackNext");
+  const asksEl = document.getElementById("mentorAsksText");
+  const messageEl = document.getElementById("mentorMessageText");
+
+  function typeMessage() {
+    typewriterInto(card, messageEl, mentor.message, () => {
+      asksEl.style.visibility = "";
+      nextBtn.style.visibility = "";
+    });
+  }
+
+  const introEl = document.getElementById("mentorIntroText");
+  if (introEl && mentor.intro) {
+    typewriterInto(card, introEl, mentor.intro, typeMessage);
+  } else {
+    typeMessage();
+  }
+
   overlay.classList.add("show");
   playMentorChimeIfAllowed();
   document.getElementById("feedbackNext").addEventListener("click", () => {
@@ -846,12 +877,19 @@ function showMentor(mentor, onClose) {
     if (!overlay || !card) return;
     card.innerHTML = `
       <p style="font-size:28px;text-align:center;margin:0 0 6px">🛸</p>
-      <p class="feedback-comment" style="text-align:center">${pickPwaMessage()}</p>
+      <p class="feedback-comment" id="pwaPromptText" style="text-align:center"></p>
       <div style="display:flex;gap:10px;margin-top:10px">
-        <button class="ghost-btn" id="pwaPromptLaterBtn" style="flex:1">あとで</button>
-        <button class="feedback-btn" id="pwaPromptAddedBtn" style="flex:1">追加しました</button>
+        <button class="ghost-btn" id="pwaPromptLaterBtn" style="flex:1;visibility:hidden">あとで</button>
+        <button class="feedback-btn" id="pwaPromptAddedBtn" style="flex:1;visibility:hidden">追加しました</button>
       </div>
     `;
+    const textEl = document.getElementById("pwaPromptText");
+    const laterBtn = document.getElementById("pwaPromptLaterBtn");
+    const addedBtn = document.getElementById("pwaPromptAddedBtn");
+    typewriterInto(card, textEl, pickPwaMessage(), () => {
+      laterBtn.style.visibility = "";
+      addedBtn.style.visibility = "";
+    });
     overlay.classList.add("show");
     try { localStorage.setItem(KEY_LAST_SHOWN_DATE, todayStr()); } catch (e) {}
     document.getElementById("pwaPromptAddedBtn").addEventListener("click", () => {
@@ -1030,8 +1068,71 @@ function setupMusicUI() {
 }
 
 /* ---------------- ユーティリティ ---------------- */
+/* ---------------- タイプライター演出（全ポップアップ共通） ----------------
+   指定した要素に、1文字ずつ文章を表示していく。
+   ・カード（ボタン以外）をタップすると即座に全文表示される
+   ・全文表示され終えたタイミングで onDone を呼ぶ（＝ボタンを出す、など） */
+const TYPEWRITER_SPEED_MS = 26;
+let ACTIVE_POPUP_SKIP = () => {};
+
+function ensureCardSkipListener(cardEl) {
+  if (!cardEl || cardEl.dataset.skipBound) return;
+  cardEl.addEventListener("click", (e) => {
+    if (e.target.tagName !== "BUTTON") ACTIVE_POPUP_SKIP();
+  });
+  cardEl.dataset.skipBound = "1";
+}
+
+function typewriterInto(cardEl, el, text, onDone) {
+  ensureCardSkipListener(cardEl);
+  if (!el) { if (onDone) onDone(); return () => {}; }
+  el.textContent = "";
+  const chars = Array.from(text);
+  let i = 0;
+  let done = false;
+  let timer = null;
+
+  function finish() {
+    if (done) return;
+    done = true;
+    if (timer) clearTimeout(timer);
+    el.textContent = text;
+    if (onDone) onDone();
+  }
+  function step() {
+    if (i < chars.length) {
+      el.textContent += chars[i];
+      i++;
+      timer = setTimeout(step, TYPEWRITER_SPEED_MS);
+    } else {
+      finish();
+    }
+  }
+  ACTIVE_POPUP_SKIP = finish;
+  step();
+  return finish; // 呼び出し元が「スキップ」に使える
+}
+
 function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = str;
   return div.innerHTML;
 }
+
+/* ===== 不思議色鉛筆へのリンク（FQT LIFE COUNTERと同じく2つのURLを交互に開く） ===== */
+(function initIroenpitsuPromo() {
+  const IROENPITSU_URLS = [
+    "https://fushigi-pencils-jtwi4o4.gamma.site",
+    "https://fushigiiroenpitsu.alternative-life-japan.com"
+  ];
+  const KEY = "loveGarden_iroenpitsuIndex";
+  const btn = document.getElementById("iroenpitsuPromoBtn");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    let index = 0;
+    try { index = Number(localStorage.getItem(KEY)) || 0; } catch (e) {}
+    const url = IROENPITSU_URLS[index % IROENPITSU_URLS.length];
+    try { localStorage.setItem(KEY, String((index + 1) % IROENPITSU_URLS.length)); } catch (e) {}
+    window.open(url, "_blank", "noopener,noreferrer");
+  });
+})();
