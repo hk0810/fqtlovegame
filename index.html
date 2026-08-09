@@ -17,7 +17,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="LOVE GARDEN">
 
-<link rel="stylesheet" href="style.css?v=32">
+<link rel="stylesheet" href="style.css?v=33">
 </head>
 <body>
 <div class="app">
@@ -56,25 +56,28 @@
         </label>
       </div>
 
-      <div class="creature-wrap" id="creatureMount"></div>
-      <p class="creature-name" id="creatureName"></p>
-      <h1 class="stage-name" id="stageName">芽生えの光</h1>
-      <p class="stage-desc" id="stageDesc">まだ小さく、ゆらいでいる愛の光。</p>
-      <p class="love-total">愛のパワー <b id="loveTotal">0</b></p>
-      <p class="mentor-count">出会ったメンター <b id="mentorCount">0</b> 人</p>
-      <label class="power-toggle">
-        <input type="checkbox" id="showPowerToggle">
-        愛のパワー指標を表示する
-      </label>
-      <label class="power-toggle">
-        <input type="checkbox" id="readAloudToggle">
-        設問を読み上げる
-      </label>
-      <div class="read-speed-row" id="readSpeedRow" style="display:none">
-        <span>速さ</span>
-        <input type="range" id="readSpeedSlider" min="0.5" max="2" step="0.1" value="1">
-        <span id="readSpeedLabel">1.0x</span>
+      <div class="creature-info">
+        <p class="creature-name" id="creatureName"></p>
+        <h1 class="stage-name" id="stageName">芽生えの光</h1>
+        <p class="stage-desc" id="stageDesc">まだ小さく、ゆらいでいる愛の光。</p>
+        <p class="love-total">愛のパワー <b id="loveTotal">0</b></p>
+        <p class="mentor-count">出会ったメンター <b id="mentorCount">0</b> 人</p>
+        <label class="power-toggle">
+          <input type="checkbox" id="showPowerToggle">
+          愛のパワー指標を表示する
+        </label>
+        <label class="power-toggle">
+          <input type="checkbox" id="readAloudToggle">
+          設問を読み上げる
+        </label>
+        <div class="read-speed-row" id="readSpeedRow" style="display:none">
+          <span>速さ</span>
+          <input type="range" id="readSpeedSlider" min="0.5" max="2" step="0.1" value="1">
+          <span id="readSpeedLabel">1.0x</span>
+        </div>
       </div>
+
+      <div class="creature-wrap" id="creatureMount"></div>
     </div>
 
     <div class="progress-wrap">
@@ -109,8 +112,8 @@
   <div class="feedback-card" id="feedbackCard"></div>
 </div>
 
-<script src="creature.js?v=32"></script>
-<script src="music.js?v=32"></script>
-<script src="app.js?v=32"></script>
+<script src="creature.js?v=33"></script>
+<script src="music.js?v=33"></script>
+<script src="app.js?v=33"></script>
 </body>
 </html>
