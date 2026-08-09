@@ -572,6 +572,7 @@ footer.foot a { color: inherit; }
   text-align: center;
   color: var(--ink);
   margin: 10px 0 26px;
+  white-space: pre-line;
 }
 
 /* 進化ポップアップ — 大きく、派手に */
