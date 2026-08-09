@@ -5,7 +5,7 @@
    species.json / traits.json から読み込む。
    ========================================================= */
 
-const CACHE_VERSION = "28"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
+const CACHE_VERSION = "29"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
 
 const CONFIG = {
   questionFiles: ["questions.json"],
@@ -323,7 +323,7 @@ function renderStage() {
   document.getElementById("stageName").textContent = stage.name;
   document.getElementById("stageDesc").textContent = stage.desc;
 
-  applyBackgroundTheme(overallCompletionFraction());
+  applyBackgroundTheme(0); // 進行度による色の変化はやめて、常に元の色に固定する
 
   const loveEl = document.getElementById("loveTotal");
   if (state.showPower || state.answeredCount <= 5) {
