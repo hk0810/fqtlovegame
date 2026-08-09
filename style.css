@@ -804,3 +804,18 @@ footer.foot a { color: inherit; }
   color: var(--glow-2);
   flex-shrink: 0;
 }
+
+/* 「共に歩む宇宙どうぶつ」情報＋姿を、金のフレームでまとめて囲う */
+.creature-frame {
+  width: 100%;
+  max-width: 340px;
+  margin: 6px 0 4px;
+  padding: 20px 16px 18px;
+  border-radius: 20px;
+  border: 1.5px solid rgba(255, 217, 122, 0.55);
+  background: linear-gradient(180deg, rgba(255, 217, 122, 0.08), rgba(255, 157, 129, 0.03));
+  box-shadow: 0 0 0 1px rgba(255, 217, 122, 0.1), 0 10px 26px rgba(184, 134, 11, 0.16);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}

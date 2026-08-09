@@ -5,7 +5,7 @@
    species.json / traits.json から読み込む。
    ========================================================= */
 
-const CACHE_VERSION = "48"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
+const CACHE_VERSION = "52"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
 
 const CONFIG = {
   questionFiles: ["questions.json"],
@@ -384,7 +384,7 @@ function renderStage() {
     idPrefix: "main"
   });
   document.getElementById("creatureName").textContent =
-    progress >= 1 ? `${sp.name}` : `育っている宇宙どうぶつ（→ ${sp.name}） ${Math.round(progress * 100)}%`;
+    progress >= 1 ? `${sp.name}` : `共に歩む宇宙どうぶつ（→ ${sp.name}） ${Math.round(progress * 100)}%`;
 
   renderEgoPanel();
 }

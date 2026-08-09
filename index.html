@@ -17,7 +17,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="LOVE GARDEN">
 
-<link rel="stylesheet" href="style.css?v=48">
+<link rel="stylesheet" href="style.css?v=52">
 </head>
 <body>
 <div class="app">
@@ -40,18 +40,6 @@
       <p class="title">愛 を 育 て る 場 所</p>
       <h2 class="fqt-brand"><span class="nowrap-word">FQT LOVE GARDEN</span></h2>
 
-      <a class="series-card" href="https://fqtlifecounter.pages.dev/" target="_blank" rel="noopener noreferrer">
-        <span class="series-badge">不思議アプリシリーズ</span>
-        <div class="series-inner">
-          <div class="series-emoji">🌌</div>
-          <div class="series-text">
-            <div class="series-main"><span class="nowrap-word">FQT LIFE COUNTER</span></div>
-            <div class="series-sub">姉妹アプリもあわせてどうぞ</div>
-          </div>
-          <div class="series-arrow">›</div>
-        </div>
-      </a>
-
       <div class="music-panel">
         <button class="bgm-btn" id="musicPlayBtn" type="button">🎵　癒しのBGMを再生</button>
         <select class="bgm-preset-select" id="musicSelect"></select>
@@ -67,14 +55,6 @@
           <input type="checkbox" id="sfxToggle" checked>
           🔔 効果音を鳴らす（ファンファーレ・出会いの音）
         </label>
-      </div>
-
-      <div class="creature-info">
-        <p class="creature-name" id="creatureName"></p>
-        <h1 class="stage-name" id="stageName">芽生えの光</h1>
-        <p class="stage-desc" id="stageDesc">まだ小さく、ゆらいでいる愛の光。</p>
-        <p class="love-total">愛のパワー <b id="loveTotal">0</b></p>
-        <p class="mentor-count">出会ったメンター <b id="mentorCount">0</b> 人</p>
         <label class="power-toggle">
           <input type="checkbox" id="showPowerToggle">
           愛のパワー指標を表示する
@@ -90,7 +70,17 @@
         </div>
       </div>
 
-      <div class="creature-wrap" id="creatureMount"></div>
+      <div class="creature-frame">
+        <div class="creature-info">
+          <p class="creature-name" id="creatureName"></p>
+          <h1 class="stage-name" id="stageName">芽生えの光</h1>
+          <p class="stage-desc" id="stageDesc">まだ小さく、ゆらいでいる愛の光。</p>
+          <p class="love-total">愛のパワー <b id="loveTotal">0</b></p>
+          <p class="mentor-count">出会ったメンター <b id="mentorCount">0</b> 人</p>
+        </div>
+
+        <div class="creature-wrap" id="creatureMount"></div>
+      </div>
     </div>
 
     <div class="progress-wrap">
@@ -193,6 +183,19 @@
           <div class="promo-arrow">›</div>
         </div>
       </a>
+
+      <!-- 🌌 姉妹アプリ紹介カード（一番下に配置） -->
+      <a class="series-card" href="https://fqtlifecounter.pages.dev/" target="_blank" rel="noopener noreferrer">
+        <span class="series-badge">不思議アプリシリーズ</span>
+        <div class="series-inner">
+          <div class="series-emoji">🌌</div>
+          <div class="series-text">
+            <div class="series-main"><span class="nowrap-word">FQT LIFE COUNTER</span></div>
+            <div class="series-sub">姉妹アプリもあわせてどうぞ</div>
+          </div>
+          <div class="series-arrow">›</div>
+        </div>
+      </a>
     </div>
   </div>
 </div>
@@ -207,8 +210,8 @@
   <div class="feedback-card" id="pwaPromptCard"></div>
 </div>
 
-<script src="creature.js?v=48"></script>
-<script src="music.js?v=48"></script>
-<script src="app.js?v=48"></script>
+<script src="creature.js?v=52"></script>
+<script src="music.js?v=52"></script>
+<script src="app.js?v=52"></script>
 </body>
 </html>
