@@ -5,7 +5,7 @@
    species.json / traits.json から読み込む。
    ========================================================= */
 
-const CACHE_VERSION = "25"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
+const CACHE_VERSION = "26"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
 
 const CONFIG = {
   questionFiles: ["questions.json"],
@@ -329,6 +329,7 @@ function renderStage() {
   } else {
     loveEl.textContent = "？？？";
   }
+  document.getElementById("mentorCount").textContent = state.seenMentors.length;
 
   const sp = getSpecies();
   const progress = stageVisualProgress();
