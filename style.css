@@ -656,3 +656,15 @@ footer.foot a { color: inherit; }
 .creature-wrap {
   margin-top: 10px;
 }
+
+.ghost-btn {
+  padding: 13px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-dim);
+  font-family: var(--sans);
+  font-size: 13px;
+  cursor: pointer;
+}
+.ghost-btn:active { opacity: 0.7; }

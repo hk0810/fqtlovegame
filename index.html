@@ -17,7 +17,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="LOVE GARDEN">
 
-<link rel="stylesheet" href="style.css?v=35">
+<link rel="stylesheet" href="style.css?v=37">
 </head>
 <body>
 <div class="app">
@@ -30,6 +30,7 @@
       まだ小さく、シンプルなすがたです。
     </p>
     <div class="species-grid" id="speciesGrid"></div>
+    <button class="save-btn" id="tutorialReopenBtnSelect" style="display:block;margin:18px auto 0">🚀 チュートリアルを見る</button>
   </div>
 
   <!-- ゲーム本編 -->
@@ -103,6 +104,7 @@
       不思議な、愛を育てる小さな物語。<br>
       <button class="save-btn" id="saveBtn">💾 保存して一旦やめる</button>
       <button class="reset-btn" id="resetBtn">🔄 最初からやり直す</button>
+      <button class="save-btn" id="tutorialReopenBtn">🚀 チュートリアルを見る</button>
     </footer>
   </div>
 </div>
@@ -112,8 +114,13 @@
   <div class="feedback-card" id="feedbackCard"></div>
 </div>
 
-<script src="creature.js?v=35"></script>
-<script src="music.js?v=35"></script>
-<script src="app.js?v=35"></script>
+<!-- 🚀 ホーム画面追加を促すポップアップ -->
+<div class="feedback-overlay" id="pwaPromptOverlay">
+  <div class="feedback-card" id="pwaPromptCard"></div>
+</div>
+
+<script src="creature.js?v=37"></script>
+<script src="music.js?v=37"></script>
+<script src="app.js?v=37"></script>
 </body>
 </html>

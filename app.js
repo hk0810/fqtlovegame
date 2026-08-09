@@ -5,7 +5,7 @@
    species.json / traits.json から読み込む。
    ========================================================= */
 
-const CACHE_VERSION = "35"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
+const CACHE_VERSION = "37"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
 
 const CONFIG = {
   questionFiles: ["questions.json"],
@@ -162,6 +162,14 @@ function renderSpeciesSelect() {
   document.getElementById("gameScreen").style.display = "none";
   applyBackgroundTheme(0);
 
+  const tutorialBtnSelect = document.getElementById("tutorialReopenBtnSelect");
+  if (!tutorialBtnSelect.dataset.bound) {
+    tutorialBtnSelect.addEventListener("click", () => {
+      showIntroSequence(() => {}, TUTORIAL_TEXTS);
+    });
+    tutorialBtnSelect.dataset.bound = "1";
+  }
+
   const grid = document.getElementById("speciesGrid");
   grid.innerHTML = "";
   SPECIES.forEach(sp => {
@@ -209,6 +217,14 @@ function startGame() {
   if (!saveBtn.dataset.bound) {
     saveBtn.addEventListener("click", saveAndPause);
     saveBtn.dataset.bound = "1";
+  }
+  const tutorialReopenBtn = document.getElementById("tutorialReopenBtn");
+  if (!tutorialReopenBtn.dataset.bound) {
+    tutorialReopenBtn.addEventListener("click", () => {
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      showIntroSequence(() => {}, TUTORIAL_TEXTS);
+    });
+    tutorialReopenBtn.dataset.bound = "1";
   }
   setupMusicUI();
   setupReadAloudUI();
@@ -736,6 +752,121 @@ function showMentor(mentor, onClose) {
     onClose();
   }, { once: true });
 }
+
+/* =========================================================
+   🚀 ホーム画面追加を促すポップアップ（FQT LIFE COUNTERと同じ仕組み）
+   ・通常のブラウザアクセス時のみ表示（ホーム画面から起動時は表示しない）
+   ・初回訪問では出さず、2回目以降のアクセスで表示
+   ・「追加しました」「あとで」の2択。しつこく出ないよう配慮
+   ========================================================= */
+(function initPwaPrompt() {
+  const KEY_ADDED = "loveGarden_pwaAdded";
+  const KEY_LATER = "loveGarden_pwaLater";
+  const KEY_VISIT_COUNT = "loveGarden_pwaVisitCount";
+  const KEY_LAST_MESSAGE_INDEX = "loveGarden_pwaLastMessageIndex";
+  const KEY_LAST_MESSAGE_DATE = "loveGarden_pwaLastMessageDate";
+  const KEY_LAST_SHOWN_DATE = "loveGarden_pwaLastShownDate";
+
+  const LATER_COOLDOWN_DAYS = 3;
+  const MIN_VISIT_COUNT_TO_SHOW = 1;
+  const SHOW_DELAY_MS = 4000;
+
+  const pwaMessages = [
+    "🌱ホーム画面に追加して、いつでも愛を育てにきてください。",
+    "🌸もうホーム画面に追加しましたか？続きはいつでも開けます。",
+    "✨宇宙どうぶつの成長を見逃さないために、ホーム画面に追加しよう。",
+    "💫メンターとの出会いを、いつでも思い出せるように。",
+    "🌙今日の愛の問いに、すぐ向き合えるように。",
+    "🎐FQT LOVE GARDENを、毎日の小さな習慣に。",
+    "🕊️あなたの愛の物語、いつでも続きから始められます。",
+    "🌷ホーム画面に追加して、育っていく姿を見守ろう。",
+    "🪞メンターとの再会は、ホーム画面からすぐそこに。",
+    "🌾今日はどんな愛を選びますか？ホーム画面から始めよう。",
+    "🎶癒しのBGMと一緒に、いつでも愛を育てに。",
+    "🌈積み重ねてきた愛の記録を、いつでも確認できるように。",
+    "💐あなたの愛の庭、ホーム画面に追加してすぐ開けるように。"
+  ];
+
+  function isStandaloneMode() {
+    return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  }
+  function setPwaAdded() { try { localStorage.setItem(KEY_ADDED, "true"); } catch (e) {} }
+  function setPwaLater() { try { localStorage.setItem(KEY_LATER, new Date().toISOString()); } catch (e) {} }
+  function getPwaStatus() {
+    try {
+      return { added: localStorage.getItem(KEY_ADDED) === "true", laterAt: localStorage.getItem(KEY_LATER) };
+    } catch (e) { return { added: false, laterAt: null }; }
+  }
+  function bumpVisitCount() {
+    try {
+      const next = Number(localStorage.getItem(KEY_VISIT_COUNT) || "0") + 1;
+      localStorage.setItem(KEY_VISIT_COUNT, String(next));
+      return next;
+    } catch (e) { return MIN_VISIT_COUNT_TO_SHOW; }
+  }
+  function todayStr() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  }
+  function shouldShowPwaPrompt() {
+    if (isStandaloneMode()) { setPwaAdded(); return false; }
+    const status = getPwaStatus();
+    if (status.added) return false;
+    if (status.laterAt) {
+      const daysSince = (Date.now() - new Date(status.laterAt).getTime()) / (1000 * 60 * 60 * 24);
+      if (daysSince < LATER_COOLDOWN_DAYS) return false;
+    }
+    try { if (localStorage.getItem(KEY_LAST_SHOWN_DATE) === todayStr()) return false; } catch (e) {}
+    const visitCount = bumpVisitCount();
+    if (visitCount < MIN_VISIT_COUNT_TO_SHOW) return false;
+    return true;
+  }
+  function pickPwaMessage() {
+    const today = todayStr();
+    let lastDate = null, rawLastIndex = null;
+    try {
+      lastDate = localStorage.getItem(KEY_LAST_MESSAGE_DATE);
+      rawLastIndex = localStorage.getItem(KEY_LAST_MESSAGE_INDEX);
+    } catch (e) {}
+    const lastIndex = rawLastIndex === null ? null : Number(rawLastIndex);
+    const nextIndex = (lastDate === today && lastIndex !== null && !isNaN(lastIndex))
+      ? lastIndex
+      : (lastIndex === null || isNaN(lastIndex) ? 0 : (lastIndex + 1) % pwaMessages.length);
+    try {
+      localStorage.setItem(KEY_LAST_MESSAGE_INDEX, String(nextIndex));
+      localStorage.setItem(KEY_LAST_MESSAGE_DATE, today);
+    } catch (e) {}
+    return pwaMessages[nextIndex];
+  }
+
+  function showPwaPrompt() {
+    const overlay = document.getElementById("pwaPromptOverlay");
+    const card = document.getElementById("pwaPromptCard");
+    if (!overlay || !card) return;
+    card.innerHTML = `
+      <p style="font-size:28px;text-align:center;margin:0 0 6px">🛸</p>
+      <p class="feedback-comment" style="text-align:center">${pickPwaMessage()}</p>
+      <div style="display:flex;gap:10px;margin-top:10px">
+        <button class="ghost-btn" id="pwaPromptLaterBtn" style="flex:1">あとで</button>
+        <button class="feedback-btn" id="pwaPromptAddedBtn" style="flex:1">追加しました</button>
+      </div>
+    `;
+    overlay.classList.add("show");
+    try { localStorage.setItem(KEY_LAST_SHOWN_DATE, todayStr()); } catch (e) {}
+    document.getElementById("pwaPromptAddedBtn").addEventListener("click", () => {
+      setPwaAdded();
+      overlay.classList.remove("show");
+    }, { once: true });
+    document.getElementById("pwaPromptLaterBtn").addEventListener("click", () => {
+      setPwaLater();
+      overlay.classList.remove("show");
+    }, { once: true });
+  }
+
+  if (shouldShowPwaPrompt()) {
+    setTimeout(showPwaPrompt, SHOW_DELAY_MS);
+  }
+})();
 
 /* ---------------- 終了 ---------------- */
 function renderEnd() {
