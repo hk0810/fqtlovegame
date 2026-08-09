@@ -5,7 +5,7 @@
    species.json / traits.json から読み込む。
    ========================================================= */
 
-const CACHE_VERSION = "70"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
+const CACHE_VERSION = "72"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
 
 const CONFIG = {
   questionFiles: ["questions.json"],
@@ -498,7 +498,8 @@ function renderNextQuestion() {
   questionCard.style.display = "";
   document.getElementById("questionCategory").textContent = `テーマ${q.level} ・ ${q.category}`;
   document.getElementById("replayBtn").style.display = "";
-  questionCard.scrollIntoView({ behavior: "smooth", block: "start" });
+  const scrollTarget = document.getElementById("progressWrap") || questionCard;
+  scrollTarget.scrollIntoView({ behavior: "smooth", block: "start" });
 
   if (state.readAloud) speakQuestion(q);
 
@@ -821,14 +822,49 @@ function showEvolutionPopup(stage, onClose) {
   playFanfareIfAllowed();
   document.getElementById("feedbackNext").addEventListener("click", () => {
     overlay.classList.remove("show");
-    onClose();
     const frame = document.getElementById("creatureFrame");
     if (frame) frame.scrollIntoView({ behavior: "smooth", block: "center" });
+    // スクロールが落ち着いた頃合いで、シェアを聞くポップアップを出す。
+    // 次の設問は、ここで「シェアする」か「あとで」を押すまで始めない。
+    setTimeout(() => showEvolutionSharePopup(stage, onClose), 600);
   }, { once: true });
 }
 
-/* BGMがすでに許可（一度でも再生開始してオーディオがアンロック済み）されている場合だけ、
-   同じ音声グラフを使って短いファンファーレを鳴らす */
+function showEvolutionSharePopup(stage, onProceed) {
+  const overlay = document.getElementById("feedbackOverlay");
+  const card = document.getElementById("feedbackCard");
+  card.innerHTML = `
+    <p class="eyebrow" style="text-align:center">「${escapeHtml(stage.name)}」に進化しました</p>
+    <p class="feedback-comment" style="text-align:center">この姿を、誰かに伝えてみますか？</p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
+      <button class="feedback-btn" id="shareEvolutionBtn">📤 進化をシェアする</button>
+      <button class="ghost-btn" id="shareLaterBtn">あとで</button>
+    </div>
+  `;
+  overlay.classList.add("show");
+
+  function goNext() {
+    overlay.classList.remove("show");
+    onProceed(); // ここでrenderNextQuestion()に進み、設問までスクロールされる
+  }
+
+  document.getElementById("shareEvolutionBtn").addEventListener("click", async () => {
+    const sp = getSpecies();
+    const shareText = `FQT LOVE GARDENで「${stage.name}」まで愛を育てました🌱\n共に歩む宇宙どうぶつ：${sp.name}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ text: shareText, url: location.href });
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(`${shareText}\n${location.href}`);
+        alert("シェア文をコピーしました。");
+      }
+    } catch (e) { /* シェアをキャンセルした場合などは何もしない */ }
+    goNext();
+  }, { once: true });
+
+  document.getElementById("shareLaterBtn").addEventListener("click", goNext, { once: true });
+}
+
 /* BGMや効果音の再生は、効果音トグルがONの場合だけ行う（music.js側の豪華なファンファーレを使う） */
 function playFanfareIfAllowed() {
   if (!state.sfxEnabled) return;
