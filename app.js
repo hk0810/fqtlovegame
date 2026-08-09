@@ -5,7 +5,7 @@
    species.json / traits.json から読み込む。
    ========================================================= */
 
-const CACHE_VERSION = "26"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
+const CACHE_VERSION = "28"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
 
 const CONFIG = {
   questionFiles: ["questions.json"],
@@ -27,7 +27,6 @@ const state = {
   total: 0,              // 13番目の指標＝愛のパワー
   perfectCount: 0,        // love=5（満点）を選んだ回数。完全体の条件のひとつ
   questionSeed: null,      // このセーブで使う13問の組み合わせを決める種（一度決まったら固定）
-  ego: {},                // 12の地球人ぽい指標（key -> value）
   attributes: {},         // 選択肢の attributes を積算した生ログ（将来の拡張用）
   answeredIds: [],
   answeredCount: 0,
@@ -51,6 +50,7 @@ let EVOLUTION = [];
 let MENTORS = [];
 let SPECIES = [];
 let TRAITS = null;
+let TRAIT_TO_CATEGORIES = {}; // categoryEgoMapの逆引き（trait key -> category配列）
 let MENTOR_NAMES = null;
 let MAX_LOVE = 100; // questions.json から算出する理論上の最大値
 let LEVEL_COUNTS = {}; // level番号 -> その水準の設問数
@@ -104,9 +104,13 @@ async function init() {
     TRAITS = await fetch(withCacheBust(CONFIG.traitsFile)).then(r => r.json());
     MENTOR_NAMES = await fetch(withCacheBust(CONFIG.mentorNamesFile)).then(r => r.json());
 
-    if (Object.keys(state.ego).length === 0) {
-      TRAITS.egoTraits.forEach(t => (state.ego[t.key] = TRAITS.initialEgoValue));
-    }
+    // trait key -> そのtraitに関係するcategoryの一覧（categoryEgoMapの逆引き）
+    TRAIT_TO_CATEGORIES = {};
+    Object.entries(TRAITS.categoryEgoMap || {}).forEach(([category, keys]) => {
+      keys.forEach(key => {
+        (TRAIT_TO_CATEGORIES[key] = TRAIT_TO_CATEGORIES[key] || []).push(category);
+      });
+    });
   } catch (e) {
     document.getElementById("questionText").textContent =
       "データの読み込みに失敗しました。サーバー経由（http://〜）で開いているかご確認ください。";
@@ -293,8 +297,6 @@ function resetGame() {
   state.speciesId = null;
   state.total = 0;
   state.perfectCount = 0;
-  state.ego = {};
-  TRAITS.egoTraits.forEach(t => (state.ego[t.key] = TRAITS.initialEgoValue));
   state.attributes = {};
   state.answeredIds = [];
   state.answeredCount = 0;
@@ -351,8 +353,8 @@ function renderStage() {
    169問（全テーマ）を通した完走度に応じて、ページ全体の背景と
    文字色を少しずつ変化させ、最後には「空の色」になるようにする。
    ========================================================= */
-const BG_THEME_START = { bg0: "#140b1f", bg1: "#1f1330", bg2: "#2a1a3d", ink: "#f3ece2", inkDim: "#cfc3d9", surface: { r: 255, g: 255, b: 255 } };
-const BG_THEME_END   = { bg0: "#ffe9c7", bg1: "#bfe3ff", bg2: "#eaf6ff", ink: "#2b2338", inkDim: "#5b6b7a", surface: { r: 43, g: 35, b: 56 } };
+const BG_THEME_START = { bg0: "#140b1f", bg1: "#1f1330", bg2: "#2a1a3d", ink: "#f3ece2", inkDim: "#cfc3d9", glow1: "#ff9d81", glow2: "#ffd97a", surface: { r: 255, g: 255, b: 255 } };
+const BG_THEME_END   = { bg0: "#ffe9c7", bg1: "#bfe3ff", bg2: "#eaf6ff", ink: "#2b2338", inkDim: "#5b6b7a", glow1: "#c15a34", glow2: "#a3760f", surface: { r: 43, g: 35, b: 56 } };
 
 function overallCompletionFraction() {
   const total = QUESTIONS.length || 1;
@@ -374,6 +376,8 @@ function applyBackgroundTheme(fraction) {
   root.setProperty("--bg-2", lerpHexColor(BG_THEME_START.bg2, BG_THEME_END.bg2, fraction));
   root.setProperty("--ink", lerpHexColor(BG_THEME_START.ink, BG_THEME_END.ink, fraction));
   root.setProperty("--ink-dim", lerpHexColor(BG_THEME_START.inkDim, BG_THEME_END.inkDim, fraction));
+  root.setProperty("--glow-1", lerpHexColor(BG_THEME_START.glow1, BG_THEME_END.glow1, fraction));
+  root.setProperty("--glow-2", lerpHexColor(BG_THEME_START.glow2, BG_THEME_END.glow2, fraction));
 
   const sA = BG_THEME_START.surface, sB = BG_THEME_END.surface;
   const r = Math.round(sA.r + (sB.r - sA.r) * fraction);
@@ -407,11 +411,31 @@ function growProgress() {
   return Math.max(0, Math.min(1, Math.min(perfectProgress, loveProgress)));
 }
 
+/* 地球人ぽい指標は、保存された数値を引き算していく方式ではなく、
+   今の状態から毎回その場で計算する方式にしてある。
+   値 = 初期値10 ×（1 − 「愛パワーの680への到達度」 × 「関係カテゴリーの回答済み割合」）
+   これにより、全設問に答え終えても愛パワーが680に届いていなければ0にはならず、
+   680に届き、かつ関係する設問をすべて答えていて、初めて0になる。 */
+function currentEgoValue(traitKey) {
+  const categories = TRAIT_TO_CATEGORIES[traitKey] || [];
+  if (categories.length === 0) return TRAITS.initialEgoValue;
+
+  const relevantQuestions = QUESTIONS.filter(q => categories.includes(q.category));
+  if (relevantQuestions.length === 0) return TRAITS.initialEgoValue;
+
+  const answeredRelevant = relevantQuestions.filter(q => state.answeredIds.includes(q.id)).length;
+  const categoryEngagement = answeredRelevant / relevantQuestions.length;
+  const overallProgress = Math.min(1, state.total / COMPLETION.totalLoveRequired);
+
+  const value = TRAITS.initialEgoValue * (1 - overallProgress * categoryEngagement);
+  return Math.max(0, value);
+}
+
 function renderEgoPanel() {
   const wrap = document.getElementById("egoPanel");
   wrap.innerHTML = "";
   TRAITS.egoTraits.forEach(t => {
-    const val = Math.max(0, state.ego[t.key]);
+    const val = currentEgoValue(t.key);
     const pct = Math.min(100, (val / TRAITS.initialEgoValue) * 100);
     const row = document.createElement("div");
     row.className = "ego-row";
@@ -499,32 +523,13 @@ function answer(question, choice) {
     state.attributes[k] = (state.attributes[k] || 0) + v;
   }
 
-  // 地球人ぽい指標は、問題のcategoryに応じて「関係する2〜3個だけ」がバラバラに減っていく
-  const egoKeys = (TRAITS.categoryEgoMap && TRAITS.categoryEgoMap[question.category]) || TRAITS.defaultEgoKeys || [];
-  const egoShrinkAmount = delta > 0 ? delta * 0.15 : 0;
-  if (egoShrinkAmount > 0) {
-    egoKeys.forEach(key => {
-      state.ego[key] = Math.max(0, (state.ego[key] ?? TRAITS.initialEgoValue) - egoShrinkAmount);
-    });
-  }
-
   state.answeredIds.push(question.id);
   state.answeredCount += 1;
 
   const afterStage = currentStage();
   const evolved = afterStage !== beforeStage;
 
-  const historyEntry = { qId: question.id, delta, isPerfect, egoKeys, egoShrinkAmount, mentorId: null, completionEgoSnapshot: null };
-
-  // 満点130回・愛パワー680以上の両方を満たしたら、地球人ぽい指標をすべて0にする
-  if (growProgress() >= 1) {
-    const stillRemaining = TRAITS.egoTraits.some(t => (state.ego[t.key] ?? 0) > 0);
-    if (stillRemaining) {
-      historyEntry.completionEgoSnapshot = { ...state.ego };
-      TRAITS.egoTraits.forEach(t => { state.ego[t.key] = 0; });
-    }
-  }
-
+  const historyEntry = { qId: question.id, delta, isPerfect, mentorId: null };
   state.history.push(historyEntry);
   saveState();
 
@@ -549,13 +554,6 @@ function undoLast() {
 
   state.total -= entry.delta;
   if (entry.isPerfect) state.perfectCount = Math.max(0, state.perfectCount - 1);
-  if (entry.completionEgoSnapshot) {
-    state.ego = { ...entry.completionEgoSnapshot };
-  } else if (entry.egoShrinkAmount > 0) {
-    entry.egoKeys.forEach(key => {
-      state.ego[key] = Math.min(TRAITS.initialEgoValue, (state.ego[key] ?? TRAITS.initialEgoValue) + entry.egoShrinkAmount);
-    });
-  }
   const idx = state.answeredIds.lastIndexOf(entry.qId);
   if (idx !== -1) state.answeredIds.splice(idx, 1);
   state.answeredCount = Math.max(0, state.answeredCount - 1);
