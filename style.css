@@ -640,3 +640,10 @@ footer.foot a { color: inherit; }
   margin: 2px 0 0;
 }
 .mentor-count b { color: var(--glow-2); font-weight: 600; }
+
+.music-status {
+  font-size: 11px;
+  color: var(--ink-dim);
+  margin: 2px 0 0;
+  min-height: 14px;
+}

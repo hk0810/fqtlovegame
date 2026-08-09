@@ -5,7 +5,7 @@
    species.json / traits.json から読み込む。
    ========================================================= */
 
-const CACHE_VERSION = "31"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
+const CACHE_VERSION = "32"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
 
 const CONFIG = {
   questionFiles: ["questions.json"],
@@ -773,6 +773,7 @@ function setupMusicUI() {
   const select = document.getElementById("musicSelect");
   const playBtn = document.getElementById("musicPlayBtn");
   const sleepSelect = document.getElementById("musicSleepSelect");
+  const musicStatus = document.getElementById("musicStatus");
   const sfxToggle = document.getElementById("sfxToggle");
   sfxToggle.checked = state.sfxEnabled;
   if (!sfxToggle.dataset.bound) {
@@ -799,16 +800,25 @@ function setupMusicUI() {
         playBtn.textContent = "🎵　癒しのBGMを再生";
         playBtn.classList.remove("active");
         clearSleepTimer();
+        musicStatus.textContent = "";
       } else {
         playTrack(select.value || MUSIC_TRACKS[0].id);
         playBtn.textContent = "🔇　BGMを停止";
         playBtn.classList.add("active");
+        musicStatus.textContent = "▶️ 再生中…";
         applySleepTimer(Number(sleepSelect.value), () => {
           playBtn.textContent = "🎵　癒しのBGMを再生";
           playBtn.classList.remove("active");
+          musicStatus.textContent = "";
         });
+        setTimeout(() => {
+          if (bgm.ctx && bgm.ctx.state === "suspended") {
+            musicStatus.textContent = "🔇 音声がブロックされています。もう一度押してください。";
+          }
+        }, 500);
       }
     } catch (err) {
+      musicStatus.textContent = `エラー：${err.message}`;
       console.error(err);
     }
   });
