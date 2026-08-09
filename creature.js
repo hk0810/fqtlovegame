@@ -237,25 +237,29 @@ function buildFootSVG(footIndex, color) {
 
 /* =========================================================
    進化に応じたパーツ解放スケジュール
-   progress(0〜1)は「答えた設問の割合」と「愛パワーの到達度」の
-   小さい方（＝両方揃って初めて完成する）で決まる。
-   130問構成であれば、実質130段階の細かい変化になる。
+   progress(0〜1)は「進化ステージ（14段階＝13回の進化）の進み具合」で決まる。
+   体・目・口は最初から見えていて、残り11個のパーツ
+  （鼻・耳・手・足・模様・しっぽ・背景・角・アンテナ・羽・星）を
+   13回の進化に割り振っている。パーツの種類は11個しか無いため、
+   2回だけは新パーツが無く、色の変化だけになる。
    ========================================================= */
 const UNLOCK_SCHEDULE = [
   { part: "body",       at: 0 },
   { part: "eye",        at: 0 },
   { part: "mouth",      at: 0 },
-  { part: "nose",       at: 0.08 },
-  { part: "ear",        at: 0.16 },
-  { part: "hand",       at: 0.24 },
-  { part: "foot",       at: 0.32 },
-  { part: "pattern",    at: 0.40 },
-  { part: "tail",       at: 0.50 },
-  { part: "background", at: 0.55 },
-  { part: "horn",       at: 0.68 },
-  { part: "antenna",    at: 0.78 },
-  { part: "wing",       at: 0.90 },
-  { part: "star",       at: 0.20 }
+  { part: "nose",       at: 1 / 13 },
+  { part: "ear",        at: 2 / 13 },
+  { part: "hand",       at: 3 / 13 },
+  { part: "foot",       at: 4 / 13 },
+  { part: "pattern",    at: 5 / 13 },
+  { part: "tail",       at: 6 / 13 },
+  { part: "background", at: 7 / 13 },
+  // 8/13 は新パーツ無し（色の変化のみ）
+  { part: "horn",       at: 9 / 13 },
+  { part: "antenna",    at: 10 / 13 },
+  // 11/13 は新パーツ無し（色の変化のみ）
+  { part: "wing",       at: 12 / 13 },
+  { part: "star",       at: 1 }
 ];
 
 function isUnlocked(part, progress) {

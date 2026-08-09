@@ -5,7 +5,7 @@
    species.json / traits.json から読み込む。
    ========================================================= */
 
-const CACHE_VERSION = "63"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
+const CACHE_VERSION = "70"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
 
 const CONFIG = {
   questionFiles: ["questions.json"],
@@ -269,7 +269,7 @@ function maybeShowIntroThenFirstMentor(onDone) {
 
 const INTRO_TEXTS = [
   "あなたはまだ宇宙に生まれて間もなく、挫折も苦難も味わったことがありません。ものごころをついた頃には自分では気づかないほどのほんの少しの傲慢さや驕りも生まれてきました。",
-  "狭い世界の中で、「自分は愛のパワーが強い」と思うこともあったでしょう。",
+  "狭い世界の中で、「自分は愛のパワーが強い」と自惚れることもあったでしょう",
   "そんなあなたが、ある日、ひとつの出会いを経験します。それは、",
   "あなたの世界を大きく変えていく大切な出会いでした。"
 ];
@@ -498,6 +498,7 @@ function renderNextQuestion() {
   questionCard.style.display = "";
   document.getElementById("questionCategory").textContent = `テーマ${q.level} ・ ${q.category}`;
   document.getElementById("replayBtn").style.display = "";
+  questionCard.scrollIntoView({ behavior: "smooth", block: "start" });
 
   if (state.readAloud) speakQuestion(q);
 
@@ -510,7 +511,10 @@ function renderNextQuestion() {
     btn.className = "choice-btn";
     btn.style.visibility = "hidden";
     btn.innerHTML = `<span class="letter">${c.id}</span><span class="choice-text"></span>`;
-    btn.addEventListener("click", () => answer(q, c));
+    btn.addEventListener("click", () => {
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      answer(q, c);
+    });
     wrap.appendChild(btn);
     return { btn, textEl: btn.querySelector(".choice-text"), choice: c };
   });
@@ -818,6 +822,8 @@ function showEvolutionPopup(stage, onClose) {
   document.getElementById("feedbackNext").addEventListener("click", () => {
     overlay.classList.remove("show");
     onClose();
+    const frame = document.getElementById("creatureFrame");
+    if (frame) frame.scrollIntoView({ behavior: "smooth", block: "center" });
   }, { once: true });
 }
 
