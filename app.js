@@ -5,7 +5,7 @@
    species.json / traits.json から読み込む。
    ========================================================= */
 
-const CACHE_VERSION = "33"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
+const CACHE_VERSION = "35"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
 
 const CONFIG = {
   questionFiles: ["questions.json"],
@@ -35,7 +35,9 @@ const state = {
   showPower: false,       // チェックを入れると、常に愛のパワーの増減・合計を表示する
   readAloud: false,       // 設問の読み上げON/OFF
   readSpeed: 1.0,          // 読み上げ速度（0.5〜2.0）
-  sfxEnabled: true         // 効果音（ファンファーレ・メンターとの出会いの音）ON/OFF。BGMとは別
+  sfxEnabled: true,        // 効果音（ファンファーレ・メンターとの出会いの音）ON/OFF。BGMとは別
+  seenTutorial: false,     // 最初のチュートリアルポップアップを見たかどうか
+  seenBlindExplain: false  // 「6問目から数値を伏せます」の説明ポップアップを見たかどうか
 };
 
 const COMPLETION = {
@@ -119,10 +121,28 @@ async function init() {
   }
 
   if (!state.speciesId) {
-    renderSpeciesSelect();
+    maybeShowTutorial(() => renderSpeciesSelect());
   } else {
     startGame();
   }
+}
+
+const TUTORIAL_TEXTS = [
+  "これは戦うゲームではありません。日常のさまざまな場面で「あなたならどうしますか？」と問いかけられる、愛を育てるゲームです。",
+  "5つの選択肢に、正解・不正解はありません。助けることも、距離を置くことも、自分を優先することも、すべて愛のかたちのひとつです。",
+  "あなたが選んだ宇宙どうぶつは、愛のパワーが育つにつれて、姿も色も少しずつ変化していきます。やがて、伝説の宇宙どうぶつへと近づいていきます。",
+  "旅の途中で、あなたより大きな愛を持つメンターに出会うことがあります。愛には天井がありません。上には、また上がいます。",
+  "「戻る」で選び直し、「保存して一旦やめる」でいつでも中断、「最初からやり直す」で最初から。読み上げやBGM・効果音も、お好みでオンオフできます。",
+  "この続きは、あなたのブラウザだけに保存されます。ホーム画面に追加しておくと、同じブラウザ・同じ端末で安心して続きを楽しめます。"
+];
+
+function maybeShowTutorial(onDone) {
+  if (state.seenTutorial) { onDone(); return; }
+  showIntroSequence(() => {
+    state.seenTutorial = true;
+    saveState();
+    onDone();
+  }, TUTORIAL_TEXTS);
 }
 
 /* ---------------- 状態管理 ---------------- */
@@ -240,20 +260,21 @@ const INTRO_TEXTS = [
   "あなたの世界を大きく変えていく大切な出会いでした。"
 ];
 
-function showIntroSequence(onComplete) {
+function showIntroSequence(onComplete, texts) {
+  const list = texts || INTRO_TEXTS;
   const overlay = document.getElementById("feedbackOverlay");
   const card = document.getElementById("feedbackCard");
   let step = 0;
 
   function renderStep() {
-    const isLast = step === INTRO_TEXTS.length - 1;
+    const isLast = step === list.length - 1;
     card.innerHTML = `
-      <p class="intro-popup-text">${escapeHtml(INTRO_TEXTS[step])}</p>
+      <p class="intro-popup-text">${escapeHtml(list[step])}</p>
       <button class="feedback-btn" id="introNext">${isLast ? "つづける" : "つぎへ"}</button>
     `;
     document.getElementById("introNext").addEventListener("click", () => {
       step += 1;
-      if (step < INTRO_TEXTS.length) {
+      if (step < list.length) {
         renderStep();
       } else {
         overlay.classList.remove("show");
@@ -535,16 +556,51 @@ function answer(question, choice) {
 
   showFeedback({ delta, comment: choice.comment, evolved, stage: afterStage }, () => {
     renderStage();
-    const mentor = nextMentorFor(state.answeredCount);
-    if (mentor) {
-      state.seenMentors.push(mentor.id);
-      historyEntry.mentorId = mentor.id; // 戻る操作でこのメンター遭遇も取り消せるように記録
-      saveState();
-      showMentor(mentor, () => renderNextQuestion());
-    } else {
-      renderNextQuestion();
-    }
+    proceedAfterAnswer();
   });
+}
+
+function proceedAfterAnswer() {
+  if (state.answeredCount === 6 && !state.showPower && !state.seenBlindExplain) {
+    state.seenBlindExplain = true;
+    saveState();
+    showBlindExplainPopup(() => proceedToMentorOrNext());
+    return;
+  }
+  proceedToMentorOrNext();
+}
+
+function proceedToMentorOrNext() {
+  const mentor = nextMentorFor(state.answeredCount);
+  if (mentor) {
+    state.seenMentors.push(mentor.id);
+    const lastEntry = state.history[state.history.length - 1];
+    if (lastEntry) lastEntry.mentorId = mentor.id; // 戻る操作でこのメンター遭遇も取り消せるように記録
+    saveState();
+    showMentor(mentor, () => renderNextQuestion());
+  } else {
+    renderNextQuestion();
+  }
+}
+
+function showBlindExplainPopup(onClose) {
+  const overlay = document.getElementById("feedbackOverlay");
+  const card = document.getElementById("feedbackCard");
+  card.innerHTML = `
+    <p class="eyebrow" style="text-align:center">お知らせ</p>
+    <p class="feedback-comment">
+      6問目からは、愛のパワーの数値を伏せています。<br><br>
+      数字を気にせず、その場面での自分の気持ちに集中してもらうためです。<br>
+      進化の瞬間には、ちゃんとお知らせします。<br><br>
+      数値をずっと見ていたい場合は、「愛のパワー指標を表示する」のチェックでいつでも見られます。
+    </p>
+    <button class="feedback-btn" id="feedbackNext">分かった</button>
+  `;
+  overlay.classList.add("show");
+  document.getElementById("feedbackNext").addEventListener("click", () => {
+    overlay.classList.remove("show");
+    onClose();
+  }, { once: true });
 }
 
 /* 直前の回答を取り消して、その設問を選び直せるようにする */
