@@ -763,7 +763,6 @@ footer.foot a { color: inherit; }
 .series-card {
   display: block;
   width: 100%;
-  max-width: 320px;
   margin: 4px 0 14px;
   text-decoration: none;
   color: inherit;

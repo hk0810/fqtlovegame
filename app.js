@@ -5,7 +5,7 @@
    species.json / traits.json から読み込む。
    ========================================================= */
 
-const CACHE_VERSION = "86"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
+const CACHE_VERSION = "88"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
 
 const CONFIG = {
   questionFiles: ["questions.json"],
@@ -148,6 +148,7 @@ function saveState() {
 
 /* ---------------- 宇宙どうぶつ 選択 ---------------- */
 function renderSpeciesSelect() {
+  window.scrollTo(0, 0);
   document.getElementById("selectScreen").style.display = "";
   document.getElementById("gameScreen").style.display = "none";
   applyBackgroundTheme(0);
