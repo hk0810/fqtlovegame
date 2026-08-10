@@ -5,7 +5,7 @@
    species.json / traits.json から読み込む。
    ========================================================= */
 
-const CACHE_VERSION = "84"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
+const CACHE_VERSION = "86"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
 
 const CONFIG = {
   questionFiles: ["questions.json"],
@@ -119,7 +119,7 @@ async function init() {
   }
 
   if (!state.speciesId) {
-    maybeShowTutorial(() => renderSpeciesSelect());
+    renderSpeciesSelect();
   } else {
     startGame();
   }
@@ -134,15 +134,6 @@ const TUTORIAL_TEXTS = [
   "「戻る」で選び直し、「保存して一旦やめる」でいつでも中断、「最初からやり直す」で最初から。読み上げやBGM・効果音も、お好みでオンオフできます。",
   "この続きは、あなたのブラウザだけに保存されます。ホーム画面に追加しておくと、同じブラウザ・同じ端末で\n安心して続きを楽しめます。"
 ];
-
-function maybeShowTutorial(onDone) {
-  if (state.seenTutorial) { onDone(); return; }
-  showIntroSequence(() => {
-    state.seenTutorial = true;
-    saveState();
-    onDone();
-  }, TUTORIAL_TEXTS);
-}
 
 /* ---------------- 状態管理 ---------------- */
 function loadState() {
@@ -161,13 +152,8 @@ function renderSpeciesSelect() {
   document.getElementById("gameScreen").style.display = "none";
   applyBackgroundTheme(0);
 
-  const tutorialBtnSelect = document.getElementById("tutorialReopenBtnSelect");
-  if (!tutorialBtnSelect.dataset.bound) {
-    tutorialBtnSelect.addEventListener("click", () => {
-      showIntroSequence(() => {}, TUTORIAL_TEXTS);
-    });
-    tutorialBtnSelect.dataset.bound = "1";
-  }
+  // この画面に来るたびに、自動でチュートリアルを流す
+  showIntroSequence(() => {}, TUTORIAL_TEXTS);
 
   const grid = document.getElementById("speciesGrid");
   grid.innerHTML = "";
@@ -901,7 +887,10 @@ function showQuestionSharePopup(question) {
 
   document.getElementById("qShareSnsBtn").addEventListener("click", async () => {
     try {
-      if (navigator.share) {
+      const iconFile = await loadAppIconFile();
+      if (iconFile && navigator.canShare && navigator.canShare({ files: [iconFile] })) {
+        await navigator.share({ text: shareText, files: [iconFile] });
+      } else if (navigator.share) {
         await navigator.share({ text: shareText });
       } else if (navigator.clipboard) {
         await navigator.clipboard.writeText(shareText);
@@ -922,6 +911,18 @@ function showQuestionSharePopup(question) {
   }, { once: true });
 
   document.getElementById("qShareLaterBtn").addEventListener("click", close, { once: true });
+}
+
+/* アプリのアイコン画像（icon-512.png）を、シェア用のFileとして読み込む */
+async function loadAppIconFile() {
+  try {
+    const res = await fetch(withCacheBust("icon-512.png"));
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return new File([blob], "FQT-LOVE-GARDEN.png", { type: "image/png" });
+  } catch (e) {
+    return null;
+  }
 }
 
 function buildQuestionShareText(question) {
