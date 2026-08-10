@@ -5,7 +5,7 @@
    species.json / traits.json から読み込む。
    ========================================================= */
 
-const CACHE_VERSION = "83"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
+const CACHE_VERSION = "84"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
 
 const CONFIG = {
   questionFiles: ["questions.json"],

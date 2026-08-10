@@ -253,13 +253,41 @@ function playClickTick() {
   playTone(ctx, master, 720, ctx.currentTime, 0.07, "sine", 0.12);
 }
 
-// タイプライターで文字が1つ増えるたびの、ごく短いタイプ音（ピッチを少しゆらす）
+// ノイズバースト（タイプライターのカチッという打鍵音の質感を出すため）
+function playNoiseClick(ctx, master, duration, gainLevel) {
+  const bufferSize = Math.max(1, Math.floor(ctx.sampleRate * duration));
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+  const noise = ctx.createBufferSource();
+  noise.buffer = buffer;
+  const filter = ctx.createBiquadFilter();
+  filter.type = "bandpass";
+  filter.frequency.value = 2200;
+  filter.Q.value = 1.1;
+  const gain = ctx.createGain();
+  const now = ctx.currentTime;
+  gain.gain.setValueAtTime(gainLevel, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+  noise.connect(filter);
+  filter.connect(gain);
+  gain.connect(master);
+  noise.start(now);
+  noise.stop(now + duration + 0.01);
+}
+
+// タイプライターで文字が1つ増えるたびの、低めで控えめな打鍵音
+// （低い"トッ"という本体音＋ごく短いカチッというノイズで、機械式タイプライターらしさを出す）
 function playTypeTick() {
   ensureSfxAudio();
   const { ctx, master } = getSfxNodes();
   if (!ctx) return;
-  const freq = 850 + Math.random() * 250;
-  playTone(ctx, master, freq, ctx.currentTime, 0.025, "square", 0.045);
+  const now = ctx.currentTime;
+  const freq = 150 + Math.random() * 50;
+  playTone(ctx, master, freq, now, 0.035, "triangle", 0.045);
+  playNoiseClick(ctx, master, 0.012, 0.03);
 }
 
 // 進化のファンファーレ（豪華版）：和音の土台＋上昇メロディ＋高音のきらめき
