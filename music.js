@@ -245,6 +245,23 @@ function playTone(ctx, master, freq, startTime, duration, waveform, gainLevel) {
   osc.stop(startTime + duration + 0.05);
 }
 
+// ボタンをタップした時の、短く柔らかいクリック音
+function playClickTick() {
+  ensureSfxAudio();
+  const { ctx, master } = getSfxNodes();
+  if (!ctx) return;
+  playTone(ctx, master, 720, ctx.currentTime, 0.07, "sine", 0.12);
+}
+
+// タイプライターで文字が1つ増えるたびの、ごく短いタイプ音（ピッチを少しゆらす）
+function playTypeTick() {
+  ensureSfxAudio();
+  const { ctx, master } = getSfxNodes();
+  if (!ctx) return;
+  const freq = 850 + Math.random() * 250;
+  playTone(ctx, master, freq, ctx.currentTime, 0.025, "square", 0.045);
+}
+
 // 進化のファンファーレ（豪華版）：和音の土台＋上昇メロディ＋高音のきらめき
 function playFanfare() {
   ensureSfxAudio();

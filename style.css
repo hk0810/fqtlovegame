@@ -229,7 +229,12 @@ body {
 .feedback-overlay.show { opacity: 1; pointer-events: auto; }
 
 /* 宇宙どうぶつが見えるように、下寄せで表示したいポップアップ用 */
-.feedback-overlay.align-bottom { align-items: flex-end; padding-bottom: 32px; }
+.feedback-overlay.align-bottom {
+  align-items: flex-end;
+  padding-bottom: 32px;
+  /* 進化した姿が見えるように、上は暗くせず下だけ暗くする */
+  background: linear-gradient(to bottom, transparent 0%, transparent 35%, rgba(10, 6, 16, 0.55) 55%, rgba(10, 6, 16, 0.85) 100%);
+}
 
 .feedback-card {
   width: 100%;

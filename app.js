@@ -5,7 +5,7 @@
    species.json / traits.json から読み込む。
    ========================================================= */
 
-const CACHE_VERSION = "80"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
+const CACHE_VERSION = "83"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
 
 const CONFIG = {
   questionFiles: ["questions.json"],
@@ -61,6 +61,7 @@ init();
 
 async function init() {
   loadState();
+  setupGlobalClickSound();
 
   try {
     const qLists = await Promise.all(CONFIG.questionFiles.map(f => fetch(withCacheBust(f)).then(r => r.json())));
@@ -232,6 +233,13 @@ function startGame() {
       if (CURRENT_QUESTION) speakQuestion(CURRENT_QUESTION);
     });
     replayBtn.dataset.bound = "1";
+  }
+  const questionShareBtn = document.getElementById("questionShareBtn");
+  if (!questionShareBtn.dataset.bound) {
+    questionShareBtn.addEventListener("click", () => {
+      if (CURRENT_QUESTION) showQuestionSharePopup(CURRENT_QUESTION);
+    });
+    questionShareBtn.dataset.bound = "1";
   }
   const toggle = document.getElementById("showPowerToggle");
   toggle.checked = state.showPower;
@@ -871,6 +879,60 @@ function showEvolutionSharePopup(stage, onProceed) {
 }
 
 /* シェア文言を組み立てる */
+/* 「メンターからの質問をシェアする」ポップアップ。選択肢は3つ：
+   📤 SNSにシェア／📋 コピー／あとで（閉じる） */
+function showQuestionSharePopup(question) {
+  const overlay = document.getElementById("feedbackOverlay");
+  const card = document.getElementById("feedbackCard");
+  const shareText = buildQuestionShareText(question);
+
+  card.innerHTML = `
+    <p class="eyebrow" style="text-align:center">メンターからの問い</p>
+    <p class="feedback-comment" style="text-align:center">この問いを、誰かにも投げかけてみますか？</p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
+      <button class="feedback-btn" id="qShareSnsBtn">📤 SNSにシェアする</button>
+      <button class="ghost-btn" id="qShareCopyBtn">📋 文章をコピーする</button>
+      <button class="ghost-btn" id="qShareLaterBtn">あとで</button>
+    </div>
+  `;
+  overlay.classList.add("show");
+
+  function close() { overlay.classList.remove("show"); }
+
+  document.getElementById("qShareSnsBtn").addEventListener("click", async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({ text: shareText });
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(shareText);
+        alert("シェア文をコピーしました。（この端末は共有シートに対応していません）");
+      }
+    } catch (e) { /* キャンセル時などは何もしない */ }
+    close();
+  }, { once: true });
+
+  document.getElementById("qShareCopyBtn").addEventListener("click", async () => {
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(shareText);
+        alert("シェア文をコピーしました。");
+      }
+    } catch (e) { /* 無視 */ }
+    close();
+  }, { once: true });
+
+  document.getElementById("qShareLaterBtn").addEventListener("click", close, { once: true });
+}
+
+function buildQuestionShareText(question) {
+  return `FQT LOVE GARDENで、こんな問いに出会いました🌱\n\n` +
+    `「${question.question}」\n\n` +
+    `あなたなら、どうしますか？🌌\n\n` +
+    `愛が育つ場所\n` +
+    `fqtlovegarden.pages.dev\n\n` +
+    `#FQTLOVEGARDEN #FQT #LOVEGARDEN #愛を育てる #愛の問い`;
+}
+
 function buildEvolutionShareText(stage, sp) {
   return `FQT LOVE GARDENで「${stage.name}」まで愛を育てました🌱\n` +
     `共に歩む宇宙どうぶつ：${sp.name}✨\n\n` +
@@ -1361,6 +1423,16 @@ function setupMusicUI() {
 const TYPEWRITER_SPEED_MS = 26;
 let ACTIVE_SKIPS = [];
 
+/* 効果音がONの間、ボタンをタップするたびに短いクリック音を鳴らす（全画面共通） */
+function setupGlobalClickSound() {
+  document.addEventListener("click", (e) => {
+    if (!state.sfxEnabled) return;
+    if (e.target.closest("button")) {
+      try { playClickTick(); } catch (err) {}
+    }
+  });
+}
+
 function ensureCardSkipListener(cardEl) {
   if (!cardEl || cardEl.dataset.skipBound) return;
   cardEl.addEventListener("click", (e) => {
@@ -1398,6 +1470,9 @@ function typewriterInto(cardEl, el, text, onDone) {
   function step() {
     if (i < chars.length) {
       el.textContent += chars[i];
+      if (state.sfxEnabled && i % 2 === 0) {
+        try { playTypeTick(); } catch (e) {}
+      }
       i++;
       timer = setTimeout(step, TYPEWRITER_SPEED_MS);
     } else {
