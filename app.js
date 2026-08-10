@@ -5,7 +5,7 @@
    species.json / traits.json から読み込む。
    ========================================================= */
 
-const CACHE_VERSION = "78"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
+const CACHE_VERSION = "80"; // データ更新のたびに数字を上げると、キャッシュされた古いJSONを使い続けるのを防げる
 
 const CONFIG = {
   questionFiles: ["questions.json"],
@@ -854,7 +854,7 @@ function showEvolutionSharePopup(stage, onProceed) {
     const sp = getSpecies();
     const shareText = buildEvolutionShareText(stage, sp);
     try {
-      const imageFile = await creatureSvgToPngFile(sp);
+      const imageFile = await creatureSvgToPngFile(sp, stage);
       if (imageFile && navigator.canShare && navigator.canShare({ files: [imageFile] })) {
         await navigator.share({ text: shareText, files: [imageFile] });
       } else if (navigator.share) {
@@ -877,17 +877,18 @@ function buildEvolutionShareText(stage, sp) {
     `あなたの愛は、どんな光になる？🌌\n\n` +
     `愛が育つ場所\n` +
     `fqtlovegarden.pages.dev\n\n` +
-    `#FQTLOVEGARDEN #FQT #LOVEGARDEN #愛を育てる #愛のパワー #愛 #宇宙どうぶつ ` +
-    `#${stage.name} #${sp.name} #自分を愛する #思いやり #感謝 #調和 #宇宙 #魂 #愛の旅 #毎日を大切に #無料アプリ`;
+    `#FQTLOVEGARDEN #FQT #LOVEGARDEN #愛を育てる #愛のパワー #愛 #宇宙どうぶつ #${stage.name}`;
 }
 
 /* 今表示されている宇宙どうぶつのSVGを、シェア用のPNG画像ファイルに変換する */
-function creatureSvgToPngFile(sp) {
-  return new Promise((resolve, reject) => {
+/* シェア用の縦型カード画像（1080×1920）を、宇宙どうぶつ・進化ステージ名・
+   宇宙どうぶつ名・愛のパワー・出会ったメンター数・日付を焼き込んで生成する */
+function creatureSvgToPngFile(sp, stage) {
+  return new Promise((resolve) => {
     const svgEl = document.querySelector("#creatureMount svg");
     if (!svgEl) { resolve(null); return; }
 
-    const size = 600; // 書き出す画像サイズ（正方形）
+    const W = 1080, H = 1920;
     const svgString = new XMLSerializer().serializeToString(svgEl);
     const svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
     const url = URL.createObjectURL(svgBlob);
@@ -895,13 +896,91 @@ function creatureSvgToPngFile(sp) {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement("canvas");
-      canvas.width = size;
-      canvas.height = size;
+      canvas.width = W;
+      canvas.height = H;
       const ctx = canvas.getContext("2d");
-      // 背景（透明にせず、宇宙どうぶつの背景色っぽい濃い色で塗っておく）
-      ctx.fillStyle = "#1a1224";
-      ctx.fillRect(0, 0, size, size);
-      ctx.drawImage(img, 0, 0, size, size);
+
+      const serif = '"Hiragino Mincho ProN", "YuMincho", serif';
+      const sans = '"Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif';
+      const glow1 = "#ff9d81", glow2 = "#ffd97a", ink = "#f3ece2", inkDim = "#cfc3d9";
+
+      // ---- 背景（夜空のグラデーション＋星） ----
+      const bg = ctx.createRadialGradient(W / 2, H * 0.35, 80, W / 2, H * 0.35, H * 0.9);
+      bg.addColorStop(0, "#2a1a3d");
+      bg.addColorStop(1, "#140b1f");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+
+      let seed = 42;
+      function rand() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+      for (let i = 0; i < 140; i++) {
+        const x = rand() * W, y = rand() * H, r = rand() * 2.2 + 0.4;
+        ctx.fillStyle = `rgba(255,255,255,${(rand() * 0.6 + 0.2).toFixed(2)})`;
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+      }
+
+      // ---- ブランド（上部） ----
+      ctx.textAlign = "center";
+      ctx.fillStyle = ink;
+      ctx.font = `900 44px ${sans}`;
+      ctx.shadowColor = "rgba(58,166,255,0.5)";
+      ctx.shadowBlur = 20;
+      ctx.fillText("FQT LOVE GARDEN", W / 2, 130);
+      ctx.shadowBlur = 0;
+      ctx.font = `28px ${serif}`;
+      ctx.fillStyle = inkDim;
+      ctx.fillText("愛 を 育 て る 場 所", W / 2, 180);
+
+      // ---- 金のフレーム＋宇宙どうぶつ ----
+      const frameX = 140, frameY = 260, frameW = W - 280, frameH = 820;
+      const grad = ctx.createLinearGradient(frameX, frameY, frameX, frameY + frameH);
+      grad.addColorStop(0, "rgba(255,217,122,0.14)");
+      grad.addColorStop(1, "rgba(255,157,129,0.05)");
+      ctx.fillStyle = grad;
+      roundRect(ctx, frameX, frameY, frameW, frameH, 40);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,217,122,0.7)";
+      ctx.lineWidth = 4;
+      roundRect(ctx, frameX, frameY, frameW, frameH, 40);
+      ctx.stroke();
+
+      const imgSize = 560;
+      ctx.drawImage(img, W / 2 - imgSize / 2, frameY + 100, imgSize, imgSize);
+
+      // ---- ステージ名・宇宙どうぶつ名 ----
+      ctx.textAlign = "center";
+      const nameGrad = ctx.createLinearGradient(W / 2 - 200, 0, W / 2 + 200, 0);
+      nameGrad.addColorStop(0, glow1);
+      nameGrad.addColorStop(1, glow2);
+      ctx.fillStyle = nameGrad;
+      ctx.font = `700 76px ${serif}`;
+      ctx.fillText(stage.name, W / 2, frameY + frameH + 110);
+
+      ctx.fillStyle = inkDim;
+      ctx.font = `34px ${sans}`;
+      ctx.fillText(`共に歩む宇宙どうぶつ：${sp.name}`, W / 2, frameY + frameH + 170);
+
+      // ---- 詳細情報（愛のパワー・メンター数・日付） ----
+      const statsY = frameY + frameH + 280;
+      ctx.font = `30px ${sans}`;
+      ctx.fillStyle = inkDim;
+      ctx.fillText("愛のパワー", W / 2 - 220, statsY);
+      ctx.fillText("出会ったメンター", W / 2 + 60, statsY);
+      ctx.font = `700 52px ${serif}`;
+      ctx.fillStyle = glow2;
+      ctx.fillText(String(state.total), W / 2 - 220, statsY + 60);
+      ctx.fillText(`${state.seenMentors.length} 人`, W / 2 + 60, statsY + 60);
+
+      ctx.font = `26px ${sans}`;
+      ctx.fillStyle = inkDim;
+      const dateStr = new Date().toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" });
+      ctx.fillText(dateStr, W / 2, statsY + 150);
+
+      // ---- 下部URL ----
+      ctx.font = `28px ${sans}`;
+      ctx.fillStyle = ink;
+      ctx.fillText("fqtlovegarden.pages.dev", W / 2, H - 90);
+
       URL.revokeObjectURL(url);
       canvas.toBlob(blob => {
         if (!blob) { resolve(null); return; }
@@ -912,6 +991,16 @@ function creatureSvgToPngFile(sp) {
     img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
     img.src = url;
   });
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
 }
 
 /* BGMや効果音の再生は、効果音トグルがONの場合だけ行う（music.js側の豪華なファンファーレを使う） */
